@@ -18,3 +18,4 @@ archivage:
 clean: 
 	rm -f *.cmi
 	rm -f *.cmo
+	rm sim

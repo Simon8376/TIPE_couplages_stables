@@ -1,6 +1,6 @@
 .PHONY: all run_main clean
 
-all: blossom.i blossom test_blossom.i test_blossom protocol_fabien.i protocol_fabien clean #main run_main
+all: protocol_fabien.i protocol_fabien clean #main run_main
 
 blossom.i: blossom.mli
 	ocamlc -c blossom.mli

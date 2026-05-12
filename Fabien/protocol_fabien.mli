@@ -16,8 +16,8 @@ val affiche_liste_int: int list -> unit
 val worst: node -> champ option
 val est_trie: pfile -> bool
 
-val connections_init: reseau -> pfile
-val node_init: reseau -> node 
+val connections_init: float -> reseau -> pfile
+val node_init: float -> reseau -> node 
 val nullify_noeuds: reseau -> node -> unit
 val nullify_unloving: reseau -> node -> unit
 val node_del: reseau -> node -> unit

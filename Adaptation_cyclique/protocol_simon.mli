@@ -5,6 +5,7 @@ val b : int ref
 type num = { mutable num : int; }
 val num : num
 type trileen = Unmatched | Unloving | Loving
+
 type node = {
   id : int;
   mutable ind_noeuds : int;
@@ -20,8 +21,11 @@ type reseau = {
   mutable len_noeuds : int;
   mutable len_unloving : int;
   mutable unloving : node option array;
+  mutable cycles_coupe : int;
 }
+
 exception Ok
+
 val id : champ option -> int
 val tril_to_string : trileen -> string
 val affiche_node_array : pfile -> unit
@@ -82,3 +86,4 @@ val marque : champ -> int
 val noeud : champ -> node
 val get_b : unit -> int
 val set_b : int -> unit
+val cycles_coupe : reseau -> int

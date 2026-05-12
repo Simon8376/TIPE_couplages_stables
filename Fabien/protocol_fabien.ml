@@ -216,6 +216,19 @@ let randint borne =
 
 
 (*  -------   Initialisation d'un nouveau node    --------   *)
+(*      ---------- et Génération de graphes --------       *)
+(*Quelques fonctions permettant de produire des graphes aléatoires
+selon les modèles d'erdos et renyi ou encore selon la loi de puissance.
+- Erdos-Renyi: chaque arêtes est présente avec probabilité p, puis avec marque aléatoire
+- Loi de puissance: chaque sommet a probabilité k^(-y) d'avoir k sommets
+où 2 < k < 3 typiquement
+
+Notons que l'algorithme de couplage nécessite des graphes complets. Les arêtes
+non présentes selon les modèles ont pour marque 0*)
+
+(*Cf la partie "Initialisation d'un node" pour un génération de marques
+totalement aléatoires*)
+
 
 
 let knuth_fischer_yates tab = 
@@ -235,48 +248,7 @@ let nth_unloving reseau i =
 
 
 
-
-
-let connections_init reseau =  (*En première approche les configuration sont choisies au hasard;
-                           en vrai, elles dépendent des paquets disponibles.
-                           On suppose nb << len_NOEUDS. On est alors en 0(len_NOEUDS)*)
-  if reseau.len_unloving <= 1 then begin
-    Printf.printf "Pas assez de nœuds unloving disponibles";
-    {
-      len = 0;
-      tab = Array.make max_config None;
-    }
-  end
-  else begin
-    let n = 1 + randint (min (reseau.len_unloving - 1) max_config) in
-    let config = Array.make reseau.len_unloving None in
-    Printf.printf "Adding %d nodes ... " n;
-    
-    for i = 0 to reseau.len_unloving - 1 do 
-      config.(i) <- reseau.unloving.(i)
-    done;
-
-    knuth_fischer_yates config;
-
-    let pf = {
-      len = 0;
-      tab = Array.make max_config None;
-    } in 
-
-    for i = 0 to min (n-1) (reseau.len_unloving-1) do 
-      let m = randint max_marque in
-      match config.(i) with 
-      | None -> failwith "Has None ... "
-      | Some nod -> (
-          Printf.printf "Adding %d ... " nod.id;
-          pfile_insere pf nod Unmatched m)
-    done;
-    pf
-  end
-
-
-
-let connections_init_complet reseau = 
+let connections_init p reseau = (*Génère une liste de préférence selon erdos-renyi*)
   let pf ={
     tab = Array.make max_config None;
     len = 0
@@ -285,16 +257,25 @@ let connections_init_complet reseau =
     match reseau.unloving.(i) with 
     |  None -> failwith "None au milieu du unloving"
     |  Some node -> 
-      let m = randint max_marque in
+      let max = (2 lsl 29) -1 in 
+      let n = randint max in 
+    
+      let m = 
+        if float_of_int n < p *. (float_of_int max) then 
+          randint max_marque
+        else
+          0
+      in
       pfile_insere pf node Unmatched m;
   done;
   pf 
 
-    
-  
 
-let node_init reseau = 
-  let pf = connections_init_complet reseau in
+
+
+let node_init p reseau = (*Prend en argument une fonction de construction de configuration
+                      et un reseau et renvoie un noeud qui est ajouté au réseau*)
+  let pf = connections_init p reseau in
   let node = {
     id = num.num;
     ind_noeuds = reseau.len_noeuds;
@@ -787,6 +768,10 @@ let protocol_vtest reseau =
   done;
   print_string "Convergence réussie"
   
+
+
+
+
 
 
 (*    ----------  MISC functions  -------     *)

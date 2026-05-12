@@ -2,22 +2,22 @@ module F = Protocol_fabien
 
 
 
-let reseau_make n = (* Test de la convergence du protocol *)
+let reseau_make p n = (* Construit un réseau. f est une fonction de construction d'une liste de préférence *)
   (*Printf.printf "-----    Création d'un réseau de taille %d   -----\n" n;*)
   let r = F.reseau_init () in 
   for i = 0 to n-1 do 
-    let _ = F.node_init r in 
+    let _ = F.node_init p r in 
     ()
   done;
   (*F.affiche_reseau r;
   Printf.printf "-----    Fin création du réseau    -----\n\n";*)
   r
 
-let reseau_make_2 n = (* Test de la convergence du protocol *)
+let reseau_make_2 p n = (* Test de la convergence du protocol *)
   Printf.printf "-----    Création d'un réseau uniformisé de taille %d   -----\n" n;
   let r = F.reseau_init () in 
   for i = 0 to 2*n-1 do 
-    let _ = F.node_init r in 
+    let _ = F.node_init p r in 
     ()
   done;
   for i = 0 to n-1 do 
@@ -30,8 +30,8 @@ let reseau_make_2 n = (* Test de la convergence du protocol *)
 
 exception Boom
 
-let test_pfile s =
-  let r = reseau_make 50 in 
+let test_pfile p s =
+  let r = reseau_make p 50 in 
   Printf.printf "-----    Début test_pfile - type %s   -----\n" s;
   Printf.printf "Taille du réseau: %d\n" (F.len_reseau r);
   Printf.printf "Réseau ainsi crée:\n";
@@ -55,7 +55,7 @@ let test_pfile s =
 
 
 let test_acyclisme () = 
-  let r = reseau_make 500 in 
+  let r = reseau_make 1. 500 in 
 
   let rec parcours_prof vus node prev = 
     if not vus.(F.lr (F.noeud node)) then begin
@@ -77,9 +77,9 @@ let test_acyclisme () =
   done;
   print_string "No cycle!\n\n"
 
-let test_protocol n c = 
+let test_protocol p n c = 
   Printf.printf "-----    Début test_protocol   -----\n";
-  let r = reseau_make n in 
+  let r = reseau_make p n in 
   (*print_string "Début du protocol:\n";*)
   let f = Stdlib.open_out_gen [Open_append] 4 "time2.txt" in
   try 
@@ -108,7 +108,7 @@ let test_protocol n c =
 
 
 let test_trileen () = 
-  let r = reseau_make 10 in 
+  let r = reseau_make 1. 10 in 
   F.protocol r;
   for i = 0 to F.len_reseau r -1 do 
     let n = F.nth_noeuds r i in 
@@ -121,12 +121,13 @@ let test_trileen () =
 
 let () = 
   let count_broken = ref 0 in
+  let p = 0.5 in
   for b = 1 to 10 do
     F.set_b b;
-    for n = 2 to 10 do
-      for k = 0 to 20 do
+    for n = 2 to 20 do
+      for k = 0 to 40 do
         Printf.printf "Test no %d with %d nodes and b = %d\n\n" k (10*n) b;
-        test_protocol (10*n) count_broken
+        test_protocol p (10*n) count_broken
       done
     done;
   done;

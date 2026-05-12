@@ -73,7 +73,7 @@ let test_acyclisme () =
   done;
   Printf.printf "No cycle!\n\n"
 
-let test_protocol n c = 
+let test_protocol n = 
   Printf.printf "-----    Début test_protocol   -----\n";
   let r = reseau_make n in 
   print_string "Début du protocol:\n";
@@ -84,11 +84,13 @@ let test_protocol n c =
     print_string "Couplage à la fin:\n";
     for i = 0 to F.len_reseau r -1 do 
       let n = F.nth_noeuds r i in 
-        Printf.printf "Node %d: " (F.lr n); 
-        F.affiche_node_array (F.couplage n)
+      Printf.printf "Node %d: " (F.lr n); 
+      F.affiche_node_array (F.couplage n)
     done;
 
-    Printf.printf "-----    Fin test_protocol   -----\n\n\n"
+    Printf.printf "%d cycles cassés\n
+    -----    Fin test_protocol   -----\n\n\n" (F.cycles_coupe r)
+
 
 
 
@@ -108,9 +110,8 @@ let test_trileen () =
 
 
 let () = 
-  let count_broken = ref 0 in
-  test_protocol 10 count_broken;
-  Printf.printf "%d boken" !count_broken
+  F.set_b 2;
+  test_protocol 5
 
 
 
