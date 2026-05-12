@@ -44,6 +44,11 @@ let num = {num = 0};;
 
 type trileen = Unmatched | Unloving | Loving (*Différents états d'un noeud au sens d'une configuration / d'un couplage*)
 
+type data = {
+  cycles_coupe : int; (*Nombre de cycles coupés*)
+  noeuds_del : int; (*Nombre de noeuds effacés au cours du processus*)
+}
+
 
 type node = {
   id: int;
@@ -70,7 +75,7 @@ type reseau = {
   mutable len_noeuds : int; (*Taille de noeuds*)
   mutable len_unloving : int; (*Taille de unloving. Le protocol s'arrête quand ça atteint 0*)
   mutable unloving : node option array; (*tableau des noeuds dont le couplage n'est pas composé que de peers loving. Idem niveau node.id *)
-  mutable cycles_coupe : int; (*Nombre de cycles coupés arbitrairement*)
+  mutable data : data; (*Stat intéressantes*)
 }
 
 exception Ok
@@ -146,7 +151,7 @@ let switch pfile i j =
 
 
 
-let has_before pfile node n = 
+let has_before pfile node n = (*Verifie si node apparait dans pfile dans les indices [0, len - n]*)
   try
     for i = 0 to pfile.len -1 - n do 
       match pfile.tab.(i) with 
@@ -379,12 +384,14 @@ let reseau_init_noedge n =
     len_noeuds = 0;
     unloving = unloving;
     len_unloving = 0;
-    cycles_coupe = 0;
+    data = {
+      cycles_coupe = 0;
+      noeuds_del = 0;};
   } in 
   for i = 0 to n-1 do
     let n = node_init_noedge r in 
     r.noeuds.(i) <- Some n;
-    r.unloving.(i) <- Some n
+    r.unloving.(i) <- Some n;
   done;
   r
 
@@ -476,7 +483,8 @@ let nullify_noeuds reseau node = (*On enlève node du reseau.noeuds et on met le
     failwith "Essai de retirer du graphe un noeud qui n'y es déjà plus, ou en tout cas les indices ne vont pas"  
   else begin 
     assert (reseau.noeuds.(reseau.len_noeuds) =  None);
-    let node_last_op = reseau.noeuds.(reseau.len_noeuds-1) in
+    affiche_tab reseau.noeuds;
+    let node_last_op = reseau.noeuds.(reseau.len_noeuds -1) in
     match node_last_op with 
     |  None -> Printf.printf "len_noeuds: %d" reseau.len_noeuds; failwith "Bizarre, le dernier element de reseau.noeuds est null"
     |  Some node_last -> (
@@ -486,17 +494,19 @@ let nullify_noeuds reseau node = (*On enlève node du reseau.noeuds et on met le
 
       node_last.ind_noeuds <- node.ind_noeuds;
       node.ind_noeuds <- -1);
-  end
+  end;
+  affiche_tab reseau.noeuds
 
 
 let nullify_unloving reseau node = (*On enlève node du reseau.unloving et on met le dernier élément node_last à la place comme ça tout reste rangé comme il faut*)
   if node.ind_unloving >= reseau.len_unloving || node.ind_unloving < 0 then  
     failwith "Essai de retirer un noeud de unloving mais son id ne correspond pas"
   else begin
-    let node_last_op = reseau.unloving.(reseau.len_unloving-1) in
+    let node_last_op = reseau.unloving.(reseau.len_unloving -1) in
     assert(reseau.unloving.(reseau.len_unloving) = None);
+    affiche_tab reseau.unloving;
     match node_last_op with 
-    |  None -> failwith "Bizarre, le dernier element de reseau.loving est null"
+    |  None -> Printf.printf "len_unloving: %d" reseau.len_unloving; failwith "Bizarre, le dernier element de reseau.loving est null"
     |  Some node_last -> (
       reseau.unloving.(node.ind_unloving) <- Some node_last;
       reseau.unloving.(reseau.len_unloving-1) <- None;
@@ -504,20 +514,10 @@ let nullify_unloving reseau node = (*On enlève node du reseau.unloving et on me
 
       node_last.ind_unloving <- node.ind_unloving;
       node.ind_unloving <- -1)                        (*SI JAMAIS TU AS UNE ERREUR DE MEMOIRE C'EST POSSIBLEMENT A CAUSE DE CA*)
-    (*remove_from_configs reseau node*)
-  end
+  end;
+  affiche_tab reseau.unloving
 
 
-let node_del reseau node = 
-  (*Retrait de node de reseau*)
-  for i = 0 to reseau.len_noeuds -1 do
-    match reseau.noeuds.(i) with 
-    |  None -> failwith "Nan"
-    |  Some n -> 
-      try rm_config n node with _ -> () (*Ptt un peu bizarre*)
-  done;
-  nullify_noeuds reseau node;
-  nullify_unloving reseau node
 
 
 let reseau_init () =
@@ -528,7 +528,9 @@ let reseau_init () =
     len_noeuds = 0;
     unloving = unloving;
     len_unloving = 0;
-    cycles_coupe = 0;
+    data = {
+      cycles_coupe = 0;
+      noeuds_del = 0;};
   } in 
   r
 
@@ -596,8 +598,11 @@ let marquen node peer def = (*donne la marque de node depuis chez peer. Renvoie 
 
 
 
+(*C'est vraiment ridicule cette ENORME chaîne de and*)
 
-let rec remove_from_couplages reseau node = (*Retire node de tous les couplages imparfaits*)
+
+let rec remove_from_couplages reseau node e = (*Retire node de tous les couplages imparfaits
+          e est un indicateur pour dire si on doit retirer node même s'il est loving ou pas*)
   for i = 0 to reseau.len_unloving -1 do
     let p = nth_unloving reseau i in
     let pfile = p.couplage in 
@@ -605,9 +610,11 @@ let rec remove_from_couplages reseau node = (*Retire node de tous les couplages 
         let i = ref 0 in
         while !i < pfile.len - 1 do
           Printf.printf "node %d -> " (id pfile.tab.(!i));
-          if id pfile.tab.(!i) = node.id && flag pfile.tab.(!i) = Unloving then (
+          if id pfile.tab.(!i) = node.id && (e && flag pfile.tab.(!i) = Unloving) || not e then (
               print_string "Removing ... ";
               remove_nth pfile !i; (*Pas de +1 vu qu'on a tout décalé*)
+              if not e then 
+                p.num_loving <- p.num_loving -1;
               set_flag_in_pfile p.config node Unmatched (Some !i);
           )
           else incr i 
@@ -628,13 +635,13 @@ and traitement_loving node peer reseau =
   if node.num_loving = !b then begin (*Le node est complètement couplé qu'avec des paires incassables: on le retire de unloving*)
     Printf.printf "removing node - ";
     nullify_unloving reseau node; 
-    remove_from_couplages reseau node;
+    remove_from_couplages reseau node true;
     Printf.printf "Nullified \n "
   end;
   if peer.num_loving = !b then begin
     Printf.printf "removing peer - ";
     nullify_unloving reseau peer;
-    remove_from_couplages reseau peer;
+    remove_from_couplages reseau peer true;
     Printf.printf "Nullified \n"
   end;
   rm_config node peer;
@@ -793,15 +800,17 @@ and launch_initiative reseau node vus =
         assert(best.e <> Loving);
         match Hashtbl.find_opt vus best.n.id with 
         |  Some p -> begin
-          Printf.printf "Cycle !! On retire %d depuis chez %d" best.n.id node.id;
+          Printf.printf "Cycle !! On retire %d depuis chez %d" best.n.id node.id;(*Passage critique; à voir si y a vrmnt besoin de retirer à la fois node et peer.
+                      Pour l'instant c'est assez dommage pour le couplage*)
           rm_config node best.n;
+          rm_config best.n node;
           try
             casse_match node best.n;
           with _ -> ();
           try
             casse_match best.n node;
           with _ -> ();
-          reseau.cycles_coupe <- reseau.cycles_coupe +1 end
+          reseau.data <- {cycles_coupe = reseau.data.cycles_coupe +1; noeuds_del = reseau.data.noeuds_del} end
 
         |  None -> 
           Hashtbl.add vus best.n.id node.id;
@@ -826,9 +835,24 @@ and launch_initiative reseau node vus =
       else (
         Printf.printf "Absurdité: node %d a une config de taille %d\n" node.id node.config.len;
         (*affiche_reseau reseau;*)
-        raise Ok)
+        (*On retire le noeud faulty au lieu de tout abandonner*)
+        node_del reseau node;
+        reseau.data <- {cycles_coupe = reseau.data.cycles_coupe; noeuds_del = reseau.data.noeuds_del +1})
 
 
+
+and node_del reseau node = 
+  (*Retrait de node de reseau*)
+  remove_from_couplages reseau node false;
+  for i = 0 to reseau.len_noeuds -1 do
+    print_string "Next\n";
+    match reseau.noeuds.(i) with 
+    |  None -> failwith "Nan"
+    |  Some n -> 
+      try rm_config n node with Failure(s) -> (); (*Ptt un peu bizarre*)
+  done;
+  nullify_noeuds reseau node;
+  affiche_tab reseau.unloving
 
 
 let rec choix_best reseau = 
@@ -947,4 +971,8 @@ let set_b new_b =
 
 
 let cycles_coupe r = 
-  r.cycles_coupe
+  r.data.cycles_coupe
+
+
+let noeuds_del r = 
+  r.data.noeuds_del

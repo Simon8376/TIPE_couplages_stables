@@ -5,8 +5,9 @@ module F = Protocol_simon
 let reseau_make n = (* Test de la convergence du protocol *)
   (*Printf.printf "-----    Création d'un réseau de taille %d   -----\n" n;*)
   let r = F.reseau_init_cycles n in 
-  F.affiche_reseau r;
-  Printf.printf "-----    Fin création du réseau    -----\n\n";
+  print_int (F.len_reseau r);
+  (*F.affiche_reseau r;
+  Printf.printf "-----    Fin création du réseau    -----\n\n";*)
   r
 
 let reseau_make_2 n = (* Test de la convergence du protocol *)
@@ -73,26 +74,31 @@ let test_acyclisme () =
   done;
   Printf.printf "No cycle!\n\n"
 
-let test_protocol n = 
-  Printf.printf "-----    Début test_protocol   -----\n";
+let test_protocol n c = 
+  (*Printf.printf "-----    Début test_protocol   -----\n";*)
   let r = reseau_make n in 
-  print_string "Début du protocol:\n";
+  (*print_string "Début du protocol:\n";*)
+  let f = Stdlib.open_out_gen [Open_append] 4 "time.txt" in
+  try 
+    let t0 = Sys.time () in
     F.protocol r;
-    print_string "\n\nRéseau à la fin du protocol: \n";
-    F.affiche_reseau r;
+    let t1 = Sys.time () in
+    (*print_string "\n\nRéseau à la fin du protocol: \n";
+    (*F.affiche_reseau r;*)
     print_newline ();
     print_string "Couplage à la fin:\n";
     for i = 0 to F.len_reseau r -1 do 
       let n = F.nth_noeuds r i in 
-      Printf.printf "Node %d: " (F.lr n); 
-      F.affiche_node_array (F.couplage n)
-    done;
+        Printf.printf "Node %d: " (F.lr n); 
+        F.affiche_node_array (F.couplage n)
+    done;*)
 
-    Printf.printf "%d cycles cassés\n
-    -----    Fin test_protocol   -----\n\n\n" (F.cycles_coupe r)
+    Printf.printf "-----    Fin test_protocol   -----\n\n\n";
 
-
-
+    Printf.fprintf f "(%d, %d, %d, %d, %f), \n" (F.get_b ()) (F.cycles_coupe r) (F.noeuds_del r) n (t1 -. t0);
+    close_out f
+  with Failure(s) -> (incr c;
+    close_out f)
 
 
 
@@ -109,9 +115,38 @@ let test_trileen () =
   done
 
 
-let () = 
-  F.set_b 2;
-  test_protocol 5
+
+let test_del () = 
+  let r = reseau_make 10 in 
+  F.affiche_reseau r;
+  let fifth = F.nth_noeuds r 5 in
+  F.node_del r fifth;
+  for i = 0 to 8 do 
+    let nth = F.nth_noeuds r i in
+    assert(not (F.has_before (F.config nth) fifth 0));
+  done;
+  F.affiche_reseau r
+
+
+let () =
+
+  test_del ()
+
+  (*F.set_b 20;
+  test_protocol 100 (ref 0)*)
+
+  (*
+  let count_broken = ref 0 in
+  for b = 1 to 10 do
+    F.set_b b;
+    for n = 2 to 10 do
+      for k = 0 to 30 do
+        Printf.printf "Test no %d with %d nodes and b = %d\n\n" k (10*n) b;
+        test_protocol (10*n) count_broken
+      done
+    done;
+  done;
+  Printf.printf "%d boken" !count_broken*)
 
 
 

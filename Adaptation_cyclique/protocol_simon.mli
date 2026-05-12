@@ -5,6 +5,10 @@ val b : int ref
 type num = { mutable num : int; }
 val num : num
 type trileen = Unmatched | Unloving | Loving
+type data = {
+  cycles_coupe : int;
+  noeuds_del : int;
+}
 
 type node = {
   id : int;
@@ -21,7 +25,7 @@ type reseau = {
   mutable len_noeuds : int;
   mutable len_unloving : int;
   mutable unloving : node option array;
-  mutable cycles_coupe : int;
+  mutable data : data;
 }
 
 exception Ok
@@ -61,7 +65,7 @@ val mem_lover : node -> node -> bool
 val try_change : pfile -> int -> trileen -> node -> unit
 val set_flag_in_pfile : pfile -> node -> trileen -> int option -> unit
 val flag : champ option -> trileen
-val remove_from_couplages : reseau -> node -> unit
+val remove_from_couplages : reseau -> node -> bool -> unit
 val traitement_loving : node -> node -> reseau -> unit
 val check_loving : node -> node -> reseau -> (int, int) Hashtbl.t -> unit
 val couplement :
@@ -87,3 +91,4 @@ val noeud : champ -> node
 val get_b : unit -> int
 val set_b : int -> unit
 val cycles_coupe : reseau -> int
+val noeuds_del : reseau -> int
