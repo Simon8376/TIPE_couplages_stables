@@ -74,7 +74,26 @@ let test_acyclisme () =
   done;
   Printf.printf "No cycle!\n\n"
 
-let test_protocol n c = 
+
+let test_protocol n = 
+  Printf.printf "-----    Début test_protocol   -----\n";
+  let r = reseau_make n in 
+  print_string "Début du protocol:\n";
+  F.protocol r;
+  print_string "\n\nRéseau à la fin du protocol: \n";
+  F.affiche_reseau r;
+  print_newline ();
+  print_string "Couplage à la fin:\n";
+  for i = 0 to F.len_reseau r -1 do 
+    let n = F.nth_noeuds r i in 
+      Printf.printf "Node %d: " (F.lr n); 
+      F.affiche_node_array (F.couplage n)
+  done;
+
+  Printf.printf "-----    Fin test_protocol   -----\n\n\n"
+
+
+let test_protocol_mesure n c = 
   (*Printf.printf "-----    Début test_protocol   -----\n";*)
   let r = reseau_make n in 
   (*print_string "Début du protocol:\n";*)
@@ -119,7 +138,7 @@ let test_trileen () =
 let test_del () = 
   let r = reseau_make 10 in 
   F.affiche_reseau r;
-  let fifth = F.nth_noeuds r 5 in
+  let fifth = F.nth_noeuds r 4 in
   F.node_del r fifth;
   for i = 0 to 8 do 
     let nth = F.nth_noeuds r i in
@@ -130,23 +149,17 @@ let test_del () =
 
 let () =
 
-  test_del ()
-
-  (*F.set_b 20;
-  test_protocol 100 (ref 0)*)
-
-  (*
   let count_broken = ref 0 in
-  for b = 1 to 10 do
+  for b = 1 to 2 do
     F.set_b b;
     for n = 2 to 10 do
-      for k = 0 to 30 do
+      for k = 0 to 40 do
         Printf.printf "Test no %d with %d nodes and b = %d\n\n" k (10*n) b;
-        test_protocol (10*n) count_broken
+        test_protocol_mesure (10*n) count_broken
       done
     done;
   done;
-  Printf.printf "%d boken" !count_broken*)
+  Printf.printf "%d boken" !count_broken
 
 
 

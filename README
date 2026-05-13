@@ -5,6 +5,8 @@ Ensemble de bouts de code et d'implémentations d'algorithmes autour des b-coupl
 On y construit divers graphes selon divers modèles (notamment Erdos-Renyi et la loi de puissance)
 - Adaptation_cyclique: Une adaptation peu coûteuse de Fabien dans le cas où le graphe est cyclique. 
 Lorsqu'on rencontre un cycle, on se coupe. S'en suit une étude de l'efficacité de cette heuristique.
+Elle n'est pas très concluante...
 - A venir: Adaptation_dynamique: : Une adaptation naïve de la précédente implémentation dans le cas d'un graphe dynamique, dont les arêtes et sommets sont modifiés périodiquement.
 - A venir: Une implémentation moins naïve.
-- A venir: Une étude de l'influence de la présence de cycles au sein du graphe de préférence sur la détermination d'un b-couplage stable. C'est l'aboutissement du TIPE
+- A venir: Une étude de l'influence de la présence de cycles au sein du graphe de préférence sur la détermination d'un b-couplage stable. 
+Il s'agit d'une synthèse du travail fourni précédemment. C'est l'aboutissement du TIPE
