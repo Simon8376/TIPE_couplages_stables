@@ -86,9 +86,10 @@ val len_reseau : reseau -> int
 val config : node -> pfile
 val couplage : node -> pfile
 val lr : node -> int
-val marque : champ -> int
 val noeud : champ -> node
 val get_b : unit -> int
 val set_b : int -> unit
 val cycles_coupe : reseau -> int
 val noeuds_del : reseau -> int
+val stabilite: reseau -> reseau -> float 
+val reseau_copy: reseau -> reseau

@@ -1,9 +1,7 @@
 val max_noeuds : int
 val max_marque : int
-val max_config : int
 val b : int ref
-type num = { mutable num : int; }
-val num : num
+
 type trileen = Unmatched | Unloving | Loving
 type node = {
   id : int;
@@ -20,8 +18,11 @@ type reseau = {
   mutable len_noeuds : int;
   mutable len_unloving : int;
   mutable unloving : node option array;
+  mutable num_new : int;
 }
+
 exception Ok
+
 val id : champ option -> int
 val tril_to_string : trileen -> string
 val affiche_node_array : pfile -> unit
@@ -78,3 +79,4 @@ val pfile_init : unit -> pfile
 val node_init_without_pfile : int -> int -> int -> int -> node
 val copy_pfiles : pfile -> pfile -> reseau -> 'a -> unit
 val reseau_copy : reseau -> reseau
+val stabilite: reseau -> reseau -> float

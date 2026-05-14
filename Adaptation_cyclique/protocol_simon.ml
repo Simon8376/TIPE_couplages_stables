@@ -30,7 +30,7 @@ un cycle, on le coupe et puis on recommence.
 
 
 let max_noeuds = 1000;; (*Nombre max d'utilisateurs*)
-let max_marque = 1000;; (*La qualité d'une connexion est évaluée entre 0 et 1000*)
+let max_marque = 100000;; (*La qualité d'une connexion est évaluée entre 0 et 1000*)
 let max_config = 1000;; (*Degré maximal d'un sommet dans le graphe d'acceptance. ATTENTION, CHANGER CA POURRAIT CASSER LE CODE *)
 let b = ref 1;; (*Nombre d'arêtes du couplage incidentes à chaque sommet: on cherche un b-couplage*)
 
@@ -963,10 +963,6 @@ let lr node =
   node.ind_noeuds
 
 
-let marque node = 
-  node.marque
-
-
 let noeud c = 
   c.n
 
@@ -984,3 +980,126 @@ let cycles_coupe r =
 
 let noeuds_del r = 
   r.data.noeuds_del
+
+
+exception Found_node of node
+
+
+
+let exists_node r id = (*Renvoie Some node si node est dans le réseau et node.id = id
+                                 None sinon*)
+  try
+    for i = 0 to r.len_noeuds -1 do 
+      match r.noeuds.(i) with 
+      |  Some node when node.id = id -> raise (Found_node node) 
+      |  _ -> ()
+    done;
+    None 
+  with Found_node node -> Some node
+
+
+let rank_in pfile id = (*Renvoie le rang de id +1 dans pfile si id y est, 0 sinon*)
+  try
+    for i = 0 to pfile.len -1 do 
+      match pfile.tab.(i) with 
+      |  Some node when node.n.id = id -> raise (Found i) 
+      |  _ -> ()
+    done;
+    0
+  with Found i -> i
+
+
+
+let stabilite r0 r = (*Quantifie une mesure s de la qualité du couplage
+                      obtenu dans r comparé aux config de r0
+                      0 <= s <= 1*)
+  let sat = ref 0. in 
+  for i = 0 to r0.len_noeuds -1 do 
+    match r0.noeuds.(i) with 
+    | None -> failwith "Pas possible"
+    | Some node0 -> 
+      match exists_node r node0.id with 
+      |  None -> ()
+      |  Some node -> 
+        for i = 0 to node.couplage.len -1 do
+          match node.couplage.tab.(i) with 
+          |  None -> ()
+          |  Some coupled -> 
+            let esp = Float.sqrt (float_of_int (((rank_in node0.config coupled.n.id) - i) * ((rank_in node0.config coupled.n.id) - i))) in 
+            let added = esp /. (float_of_int node0.config.len) in 
+            assert(added <= 1.);
+            sat := !sat +. added
+        done
+  done; 
+  let s = !sat /. (float_of_int (!b*r0.len_noeuds)) in 
+  s*.s
+
+
+(*      Quelques fonctions pour copier un réseau      *)
+
+let pfile_init () = 
+  {tab = Array.make max_noeuds None;
+  len = 0;}
+
+
+let node_init_without_pfile id ind_n ind_u n_lov = 
+  {id = id;
+  ind_noeuds = ind_n;
+  ind_unloving = ind_u;
+  config = pfile_init ();
+  couplage = pfile_init ();
+  num_loving = n_lov;}
+
+
+
+let copy_pfiles pf1 pf2 r1 r2= 
+  for i = 0 to pf1.len -1 do 
+    match pf2.tab.(i) with 
+    |  None -> 
+      pf1.tab.(i) <- None
+    |  Some ch -> 
+      pf1.tab.(i) <- Some {n = nth_noeuds r1 ch.n.ind_noeuds; e = ch.e; marque = ch.marque} 
+  done
+  
+
+let reseau_copy r0 = 
+  let r = reseau_init () in 
+  r.len_unloving <- r0.len_unloving;
+  r.len_noeuds <- r0.len_noeuds;
+
+  (*copie de r0.noeuds*)
+  for i = 0 to r.len_noeuds -1 do 
+    match r0.noeuds.(i) with 
+    |  None -> 
+      r.noeuds.(i) <- None
+    |  Some node ->
+      r.noeuds.(i) <- Some (node_init_without_pfile node.id node.ind_noeuds node.ind_unloving node.num_loving)
+  done;
+
+  (*copie de r0.unloving*)
+  for i = 0 to r.len_unloving -1 do 
+    match r0.unloving.(i) with 
+    |  None -> 
+      r.unloving.(i) <- None
+    |  Some node ->
+      match r.noeuds.(node.ind_noeuds) with 
+      |  None -> failwith "Pas bon"
+      |  Some peer when peer.id <> node.id -> failwith "Pas bon"
+      |  Some peer -> (*peer est une copie de node normalement*) 
+        r.unloving.(i) <- Some peer
+  done;
+  
+
+  (*copie des configs et couplages*)
+  for i = 0 to r.len_noeuds -1 do 
+    match r.noeuds.(i), r0.noeuds.(i) with 
+    |  None, None -> ()
+    |  None, Some n | Some n, None -> failwith "Nannnn"
+    |  Some n1, Some n2 -> 
+      n1.config.len <- n2.config.len;
+      n1.couplage.len <- n2.couplage.len;
+      copy_pfiles n1.couplage n2.couplage r r0;
+      copy_pfiles n1.config n2.config r r0
+  done;
+
+  r

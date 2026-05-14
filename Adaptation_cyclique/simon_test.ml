@@ -5,7 +5,6 @@ module F = Protocol_simon
 let reseau_make n = (* Test de la convergence du protocol *)
   (*Printf.printf "-----    Création d'un réseau de taille %d   -----\n" n;*)
   let r = F.reseau_init_cycles n in 
-  print_int (F.len_reseau r);
   (*F.affiche_reseau r;
   Printf.printf "-----    Fin création du réseau    -----\n\n";*)
   r
@@ -77,7 +76,8 @@ let test_acyclisme () =
 
 let test_protocol n = 
   Printf.printf "-----    Début test_protocol   -----\n";
-  let r = reseau_make n in 
+  let r0 = reseau_make n in 
+  let r = F.reseau_copy r0 in
   print_string "Début du protocol:\n";
   F.protocol r;
   print_string "\n\nRéseau à la fin du protocol: \n";
@@ -90,12 +90,19 @@ let test_protocol n =
       F.affiche_node_array (F.couplage n)
   done;
 
+  Printf.printf "Stabilité: %f" (F.stabilite r0 r);
   Printf.printf "-----    Fin test_protocol   -----\n\n\n"
+
+
+
+
+
 
 
 let test_protocol_mesure n c = 
   (*Printf.printf "-----    Début test_protocol   -----\n";*)
-  let r = reseau_make n in 
+  let r0 = reseau_make n in 
+  let r = F.reseau_copy r0 in
   (*print_string "Début du protocol:\n";*)
   let f = Stdlib.open_out_gen [Open_append] 4 "time.txt" in
   try 
@@ -112,9 +119,10 @@ let test_protocol_mesure n c =
         F.affiche_node_array (F.couplage n)
     done;*)
 
-    Printf.printf "-----    Fin test_protocol   -----\n\n\n";
+    (*Printf.printf "-----    Fin test_protocol   -----\n\n\n";
+    flush stdout;*)
 
-    Printf.fprintf f "(%d, %d, %d, %d, %f), \n" (F.get_b ()) (F.cycles_coupe r) (F.noeuds_del r) n (t1 -. t0);
+    Printf.fprintf f "(%d, %d, %d, %d, %f, %f), \n" (F.get_b ()) (F.cycles_coupe r) (F.noeuds_del r) n (t1 -. t0) (F.stabilite r0 r);
     close_out f
   with Failure(s) -> (incr c;
     close_out f)
@@ -152,9 +160,10 @@ let () =
   let count_broken = ref 0 in
   for b = 1 to 2 do
     F.set_b b;
-    for n = 2 to 10 do
+    for n = 2 to 15 do
+      Printf.printf "Test %d nodes and b = %d\n\n" (10*n) b;
+      flush stdout;
       for k = 0 to 40 do
-        Printf.printf "Test no %d with %d nodes and b = %d\n\n" k (10*n) b;
         test_protocol_mesure (10*n) count_broken
       done
     done;
@@ -163,11 +172,4 @@ let () =
 
 
 
-(*
-Bien refaire les tests et le protocol
-Piste d'amélioration: quand tu changes les flag le long d'un
-  chemin tu fais des changements systématiquement surtout au debut
-  on pourrait faire les chemins récursivement apres l'étude du chemin
-C'est un casse tete, il y a des erreurs de flag
-  *)
 

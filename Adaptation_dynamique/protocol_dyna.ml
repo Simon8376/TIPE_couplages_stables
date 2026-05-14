@@ -44,17 +44,10 @@ fonctions en plus
 
 
 let max_noeuds = 1000;; (*Nombre max d'utilisateurs*)
-let max_marque = 1000;; (*La qualité d'une connexion est évaluée entre 0 et 1000*)
-let max_config = 1000;; (*Degré maximal d'un sommet dans le graphe d'acceptance. ATTENTION, CHANGER CA POURRAIT CASSER LE CODE *)
+let max_marque = 100000;; (*La qualité d'une connexion est évaluée entre 0 et 1000*)
 let b = ref 1;; (*Nombre d'arêtes du couplage incidentes à chaque sommet: on cherche un b-couplage*)
 
 Random.init (int_of_float (Sys.time () *. 100000000.));
-
-
-type num = {mutable num : int;} (*Permet de définit l'id d'un nouveau noeud*)
-
-let num = {num = 0};;
-
 
 type trileen = Unmatched | Unloving | Loving (*Différents états d'un noeud au sens d'une configuration / d'un couplage*)
 
@@ -84,6 +77,8 @@ type reseau = {
   mutable len_noeuds : int; (*Taille de noeuds*)
   mutable len_unloving : int; (*Taille de unloving. Le protocol s'arrête quand ça atteint 0*)
   mutable unloving : node option array; (*tableau des noeuds dont le couplage n'est pas composé que de peers loving. Idem niveau node.id *)
+  mutable num_new : int; (*Numéro +1 du node de plus grand identifiant. Cela permet de rajouter des
+                          nodes uniques*)
 }
 
 exception Ok
@@ -267,7 +262,7 @@ let nth_unloving reseau i =
 
 let connections_init p reseau = (*Génère une liste de préférence selon erdos-renyi*)
   let pf ={
-    tab = Array.make max_config None;
+    tab = Array.make max_noeuds None;
     len = 0
   } in
   for i = 0 to reseau.len_unloving -1 do 
@@ -294,7 +289,7 @@ let node_init p reseau = (*Prend en argument un float p entre 0 et 1
                       et un reseau et renvoie un noeud qui est ajouté au réseau et qui a p*len_reseau voisins (non nuls)*)
   let pf = connections_init p reseau in
   let node = {
-    id = num.num;
+    id = reseau.num_new;
     ind_noeuds = reseau.len_noeuds;
     ind_unloving = reseau.len_unloving;
     config = pf;
@@ -305,7 +300,7 @@ let node_init p reseau = (*Prend en argument un float p entre 0 et 1
     num_loving = 0;
   } 
   in 
-  num.num <- num.num +1;
+  reseau.num_new <- reseau.num_new +1;
   
   (*il faut ensuite ajouter n aux ensemble de configuration de tous les autres pour symétrie*)
   for i = 0 to node.config.len -1 do 
@@ -446,6 +441,7 @@ let reseau_init () =
     len_noeuds = 0;
     unloving = unloving;
     len_unloving = 0;
+    num_new = 1;
   } in 
   r
 
@@ -741,9 +737,11 @@ let rec initiative_best reseau = (*Réalise une initiative via stratégie best m
   end
 
 else (
-  Printf.printf "Absurdité: node %d a une config de taille %d\n" node.id node.config.len;
+  (*Printf.printf "Absurdité: node %d a une config de taille %d\n" node.id node.config.len;*)
   (*affiche_reseau reseau;*)
-  if !b >= reseau.len_unloving then reseau.len_unloving <- 0
+  if !b >= reseau.len_unloving then (
+    (*Printf.printf "C'est ok, c'est la fin\n";*)
+    reseau.len_unloving <- 0)
   else exit(1))
 
   (*Possibilité envisagée et écartée: ajout de connections s'il n'y en a plus*)
@@ -766,14 +764,13 @@ end*)
 
 
 let protocol reseau = 
-  print_string "Début protocol...\n";
-  num.num <- 0;
+  (*print_string "Début protocol...\n";*)
   while reseau.len_unloving > 0 do 
     (*Printf.printf "Lancement à len_unloving = %d ... " reseau.len_unloving; *)
     initiative_best reseau;
     (*print_string "Initiative finie\n\n"*)
-  done;
-  print_string "Convergence réussie\n"
+  done
+  (*print_string "Convergence réussie\n"*)
   
 
 let protocol_vtest reseau = 
@@ -870,6 +867,7 @@ let reseau_copy r0 =
   let r = reseau_init () in 
   r.len_unloving <- r0.len_unloving;
   r.len_noeuds <- r0.len_noeuds;
+  r.num_new <- r0.num_new;
 
   (*copie de r0.noeuds*)
   for i = 0 to r.len_noeuds -1 do 
@@ -907,3 +905,58 @@ let reseau_copy r0 =
   done;
 
   r
+
+
+
+exception Found_node of node
+exception Found of int
+
+
+
+let exists_node r id = (*Renvoie Some node si node est dans le réseau et node.id = id
+                                 None sinon*)
+  try
+    for i = 0 to r.len_noeuds -1 do 
+      match r.noeuds.(i) with 
+      |  Some node when node.id = id -> raise (Found_node node) 
+      |  _ -> ()
+    done;
+    None 
+  with Found_node node -> Some node
+
+
+let rank_in pfile id = (*Renvoie le rang de id +1 dans pfile si id y est, 0 sinon*)
+  try
+    for i = 0 to pfile.len -1 do 
+      match pfile.tab.(i) with 
+      |  Some node when node.n.id = id -> raise (Found i) 
+      |  _ -> ()
+    done;
+    0
+  with Found i -> i
+
+
+
+let stabilite r0 r = (*Quantifie une mesure s de la qualité du couplage
+                      obtenu dans r comparé aux config de r0
+                      0 <= s <= 1*)
+  let sat = ref 0. in 
+  for i = 0 to r0.len_noeuds -1 do 
+    match r0.noeuds.(i) with 
+    | None -> failwith "Pas possible"
+    | Some node0 -> 
+      match exists_node r node0.id with 
+      |  None -> ()
+      |  Some node -> 
+        for i = 0 to node.couplage.len -1 do
+          match node.couplage.tab.(i) with 
+          |  None -> ()
+          |  Some coupled -> 
+            let esp = Float.sqrt (float_of_int (((rank_in node0.config coupled.n.id) - i) * ((rank_in node0.config coupled.n.id) - i))) in 
+            let added = esp /. (float_of_int node0.config.len) in 
+            assert(added <= 1.);
+            sat := !sat +. added
+        done
+  done; 
+  let s = !sat /. (float_of_int (!b*r0.len_noeuds)) in 
+  s*.s

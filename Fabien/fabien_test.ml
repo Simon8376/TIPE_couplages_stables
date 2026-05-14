@@ -78,10 +78,11 @@ let test_acyclisme () =
   print_string "No cycle!\n\n"
 
 let test_protocol p n c = 
-  Printf.printf "-----    Début test_protocol   -----\n";
-  let r = reseau_make p n in 
+  (*Printf.printf "-----    Début test_protocol   -----\n";*)
+  let r0 = reseau_make p n in 
+  let r = F.reseau_copy r0 in
   (*print_string "Début du protocol:\n";*)
-  let f = Stdlib.open_out_gen [Open_append] 4 "time2.txt" in
+  let f = Stdlib.open_out_gen [Open_append] 4 "time.txt" in
   try 
     let t0 = Sys.time () in
     F.protocol r;
@@ -96,9 +97,9 @@ let test_protocol p n c =
         F.affiche_node_array (F.couplage n)
     done;*)
 
-    Printf.printf "-----    Fin test_protocol   -----\n\n\n";
+    (*Printf.printf "-----    Fin test_protocol   -----\n\n\n";*)
 
-    Printf.fprintf f "(%d,%d,%f), \n" (F.get_b ()) n (t1 -. t0);
+    Printf.fprintf f "(%d, %d, %f, %f), \n" (F.get_b ()) n (t1 -. t0) (F.stabilite r0 r);
     close_out f
   with Failure(s) -> (incr c;
     close_out f)
@@ -120,14 +121,17 @@ let test_trileen () =
 
 
 let () = 
+
+
   let count_broken = ref 0 in
-  let p = 0.5 in
-  for b = 1 to 10 do
+  let p = 1. in
+  for b = 1 to 8 do
     F.set_b b;
-    for n = 2 to 20 do
-      for k = 0 to 40 do
-        Printf.printf "Test no %d with %d nodes and b = %d\n\n" k (10*n) b;
-        test_protocol p (10*n) count_broken
+    for n = 2 to 15 do
+      Printf.printf "Test %d nodes and b = %d\n\n" (10*n) b;
+      for k = 0 to 10 do
+        test_protocol p (10*n) count_broken;
+        flush stdout
       done
     done;
   done;

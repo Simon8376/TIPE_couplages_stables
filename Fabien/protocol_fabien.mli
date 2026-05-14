@@ -45,3 +45,5 @@ val id: champ option -> int
 val noeud: champ -> node
 val get_b: unit -> int
 val set_b: int -> unit
+val reseau_copy: reseau -> reseau 
+val stabilite: reseau -> reseau -> float
