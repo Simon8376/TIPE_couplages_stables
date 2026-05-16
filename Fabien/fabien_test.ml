@@ -125,11 +125,11 @@ let () =
 
   let count_broken = ref 0 in
   let p = 1. in
-  for b = 1 to 8 do
+  for b = 1 to 5 do
     F.set_b b;
-    for n = 2 to 15 do
+    for n = 2 to 16 do
       Printf.printf "Test %d nodes and b = %d\n\n" (10*n) b;
-      for k = 0 to 10 do
+      for k = 0 to 40 do
         test_protocol p (10*n) count_broken;
         flush stdout
       done

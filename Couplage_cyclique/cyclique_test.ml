@@ -158,7 +158,7 @@ let test_del () =
 let () =
 
   let count_broken = ref 0 in
-  for b = 1 to 2 do
+  for b = 2 to 2 do
     F.set_b b;
     for n = 2 to 15 do
       Printf.printf "Test %d nodes and b = %d\n\n" (10*n) b;

@@ -1,0 +1,64 @@
+
+    ---- Rappel du protocol de Fabien Matthieu -------
+
+On modélise un réseau pair à pair comme un graphe où les sommets sont les peers,
+On définit le graphe d'acceptance: l'ensemble des liaisons possibles (dans un contexte réel, déterminées en fonction des 
+paquets dispo) (ici choisies aléatoirement).
+
+Parmi les arêtes du graphe d'acceptance sont choisies les arêtes du couplage telles que chaque sommet
+est incident à b arêtes du couplage et le couplage final soit stable
+
+Pour chaque arête du couplage, un sommet est le client, l'autre le serveur. Cette connexion caractérise 
+donc un échange de données du serveur au client. On pourrait à moindre coût introduire une polarité de la connexion.
+Un sommet u est lié à un sommet v ssi soit u est serveur et possède un paquet cherché par v, 
+soit v est serveur et possède un paquet cherché par u. 
+
+Chaque arête (u, v) est pondérées par m(u, v).
+m est une fonction déterminant la qualité d'une connexion.
+De cette manière, les préférences sont acycliques.
+Ici, m est une fonction aléatoire.
+
+Trouver un couplage stable dans ce graphe permet à un instant t de déterminer quels paquets sont
+transférés afin d'optimiser le transfert des données, en un certain sens.
+
+La fonction de satisfaction est présentée par G. Gorgiadis et F. Papatriantafilou comme un 
+paramètre qu'ils cherchent à optimiser en trouvant un couplage particulier. La notion de couplage
+de satisfaction maximale est proche de celle de couplage stable, ce qui justifie l'utilisation
+de cette mesure pour quantifier la qualité d'un couplage se voulant stable (cela aura toute son 
+importance dans le dossier Couplage_cyclique où les couplages trouvés sont rarement stables)
+
+
+
+    ----- Rappel de l'adaptation dynamique naïve du protocol ------
+
+On ajoute/retire périodiquement des noeuds dans le réseau. Reste à voir à quelle fréquence
+on doit recalculer le couplage, quel est le temps de churn minimal possible permettant de 
+conserver la convergence, etc...
+
+Cette implémentation est NAIVE: on relance l'algo de Fabien si on doit recalculer qqch
+Ca fait un calcul global pour une modification locale donc ça parait inefficace...
+
+
+
+    ----- Objectif de ce dossier -----
+
+On cherche à améliorer le calcul du couplage dans un graphe dynamique. Au lieu de recalculer
+l'ensemble du couplage à chaque modification, on effectue des modifications locales autour du point 
+de modification du graphe de préférences. 
+
+Plus précisément, on ajoute/retire un sommet, on modifie les configurations en fonction de cela et 
+on modifie surtout quels sommets sont unloving et leur paramètre num_unloving. Une fois que cela est fait, on relance 
+le protocol. On espère ensuite qu'on a ainsi évité le calcul de certains couplages. Dans le pire cas, 
+on recalcule le couplage entièrement.
+
+Le point critique ici est de pouvoir décider quelles liaisons ne sont plus loving lorsqu'on ajoute un sommet. 
+Il n'est pas aisé de décider de cela car un couple est décrété loving à un certain état du réseau, qui est 
+ensuite modifié. Etant incapable de retourner facilement à cet état, on ne peut pas trancher quant à la 
+nécessité d'une modification. Dans le doute, on défait toutes les liaisons dont la marque est plus faible
+que celle proposée par le noeud ajouté pour une des extrémité de la liaison.
+Par exemple, si n et p sont deux noeuds liés dans le couplage par une marque 100 et qu'on ajoute un 
+noeud q de marque 200 chez n et de marque 50 chez p, alors on casse la liaison.
+
+
+Lorsqu'on retire un sommet, c'est plus simple: il suffit de détruire toutes les liaisons dans lesquelles
+il est présent et de relancer le protocol à partir de là.

@@ -1,12 +1,13 @@
-Ensemble de bouts de code et d'implémentations d'algorithmes autour des b-couplages stables, dans le cadre de mon TIPE. Vous y trouverez notamment:
+Ensemble de bouts de code et d'implémentations d'algorithmes autour des b-couplages stables, dans le cadre de mon TIPE. 
+Vous y trouverez notamment:
 
 - Blossom: Une implémentation de l'algorithme Blossom de Edmonds qui trouve un couplage maximum dans un graphe non supposé biparti
 - Fabien: Une implémentation de l'algorithme décrit par Fabien Matthieu dans son article 'On Using Matching Theory to Understand P2P Network Design'. Il permet de trouver un b-couplage stable dans un graphe acyclique.
-On y construit divers graphes selon divers modèles (notamment Erdos-Renyi et la loi de puissance)
-- Adaptation_cyclique: Une adaptation peu coûteuse de Fabien dans le cas où le graphe est cyclique. 
+On y construit divers graphes selon divers modèles (notamment Erdos-Renyi)
+- Couplage_cyclique: Une adaptation peu coûteuse de Fabien dans le cas où le graphe est cyclique. 
 Lorsqu'on rencontre un cycle, on se coupe. S'en suit une étude de l'efficacité de cette heuristique.
 Elle n'est pas très concluante...
-- A venir: Adaptation_dynamique: : Une adaptation naïve de la précédente implémentation dans le cas d'un graphe dynamique, dont les arêtes et sommets sont modifiés périodiquement.
-- A venir: Une implémentation moins naïve.
+- Couplage_dynamique: : Une adaptation naïve de la précédente implémentation dans le cas d'un graphe dynamique, dont les arêtes et sommets sont modifiés périodiquement.
+- A venir: Couplage_adaptatif: Une implémentation moins naïve inspirée du travail de Gorgiadis/Papatriantafilou.
 - A venir: Une étude de l'influence de la présence de cycles au sein du graphe de préférence sur la détermination d'un b-couplage stable. 
 Il s'agit d'une synthèse du travail fourni précédemment. C'est l'aboutissement du TIPE

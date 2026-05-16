@@ -1,11 +1,5 @@
 module F = Protocol_dyna
 
-let crit = 1;; (*Nombre de noeuds qu'il faut ajouter/retirer avant
-                de recalculer un couplage*)
-
-
-
-
 
 
 let reseau_make p n = (* Construit un réseau. f est une fonction de construction d'une liste de préférence *)

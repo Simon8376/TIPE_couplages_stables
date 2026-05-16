@@ -1,0 +1,39 @@
+
+      ------ Rappel de l'implémentation de Fabien Matthieur -----  
+
+On modélise un réseau pair à pair comme un graphe où les sommets sont les peers,
+On définit le graphe d'acceptance: l'ensemble des liaisons possibles (dans un contexte réel, déterminées en fonction des 
+paquets dispo) (ici choisies aléatoirement).
+
+Parmi les arêtes du graphe d'acceptance sont choisies les arêtes du couplage telles que chaque sommet
+est incident à b arêtes du couplage et le couplage final soit stable
+
+Pour chaque arête du couplage, un sommet est le client, l'autre le serveur. Cette connexion caractérise 
+donc un échange de données du serveur au client. On pourrait à moindre coût introduire une polarité de la connexion.
+Un sommet u est lié à un sommet v ssi soit u est serveur et possède un paquet cherché par v, 
+soit v est serveur et possède un paquet cherché par u. 
+
+Chaque arête (u, v) est pondérées par m(u, v).
+m est une fonction déterminant la qualité d'une connexion.
+De cette manière, les préférences sont acycliques.
+Ici, m est une fonction aléatoire.
+
+Trouver un couplage stable dans ce graphe permet à un instant t de déterminer quels paquets sont
+transférés afin d'optimiser le transfert des données, en un certain sens.
+
+La fonction de satisfaction est présentée par G. Gorgiadis et F. Papatriantafilou comme un 
+paramètre qu'ils cherchent à optimiser en trouvant un couplage particulier. La notion de couplage
+de satisfaction maximale est proche de celle de couplage stable, ce qui justifie l'utilisation
+de cette mesure pour quantifier la qualité d'un couplage se voulant stable (cela aura toute son 
+importance dans le dossier Couplage_cyclique où les couplages trouvés sont rarement stables)
+
+
+
+    ------ Objectifs de ce dossier --------
+
+On ajoute/retire périodiquement des noeuds dans le réseau. Reste à voir à quelle fréquence
+on doit recalculer le couplage, quel est le temps de churn minimal possible permettant de 
+conserver la convergence, etc...
+
+Cette implémentation est NAIVE: on relance l'algo de Fabien si on doit recalculer qqch
+Ca fait un calcul global pour une modification locale donc ça parait inefficace...
