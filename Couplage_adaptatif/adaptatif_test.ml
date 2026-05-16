@@ -33,7 +33,7 @@ let affiche_couplages r =
   for i = 0 to F.len_reseau r -1 do 
     let node = F.nth_noeuds r i in
     Printf.printf "Couplage de %d\n" (F.id_n node);
-    F.affiche_node_array (F.couplage node)
+    F.affiche_node_array (F.couplage node) 0
   done
 
 
@@ -51,23 +51,40 @@ let test_modif_lovers () =
 
   let _ = F.modif_lovers r n in 
 
-  Printf.printf "------- Réseau et couplage après ajout: \n";
+  Printf.printf "------- Réseau et couplage après modif: \n";
   F.affiche_reseau r;
   affiche_couplages r
+
+
+let test_node_add () = 
+  F.set_b 2;
+  let r = reseau_make 1. 10 in 
+  F.protocol r;
+  Printf.printf "------- Réseau et couplage après protocol: \n";
+  F.affiche_reseau r;
+    
+
+  let _ = F.node_add_rand 1. r in
+  Printf.printf "------- Réseau après ajout:\n";
+  F.affiche_reseau r
 
 
 let test_churn p t n c = (*période de churn t, nombre initial n de noeuds,
                   p est une proba de présence d'arête, c'est pas très important
                   *)
-  for b = 1 to 3 do
+  for b = 2 to 3 do
     F.set_b b;
     for k = 0 to 39 do
+      Printf.printf "Numéro %d..." k;
       let r = reseau_make p n in 
-      let f = Stdlib.open_out_gen [Open_append] 4 "time.txt" in
+      (*let f = Stdlib.open_out_gen [Open_append] 4 "time.txt" in*)
+      flush_all ();
       F.protocol r;
       for i = 0 to 200 do 
         let t1 = Sys.time () in 
         let modified = F.node_add_rand p r in
+        Printf.printf "%d\n" modified;
+        F.affiche_reseau r;
         (try
           F.protocol r
         with Failure(s) ->  (*Echec, tant pis*)
@@ -76,19 +93,22 @@ let test_churn p t n c = (*période de churn t, nombre initial n de noeuds,
         if t2 -. t1 > t then 
           failwith "Echec: le churn time n'a pas laissé le temps de finir le calcul"
         else
-          Printf.fprintf f "(%d, %d, %f, %d), \n" (F.get_b ()) (F.len_reseau r) (t2 -. t1) modified;
-        flush_all ()
+          ()(*Printf.fprintf f "(%d, %d, %f, %d), \n" (F.get_b ()) (F.len_reseau r) (t2 -. t1) modified;*)
       done
     done
   done
 
 
 let () = 
-  let c = ref 0 in
+
+  test_node_add ()
+
+  (*let c = ref 0 in
   test_churn 1. 1. 10 c;
-  Printf.printf "%d steps failed\nTotal time: %f" !c (Sys.time ())
+  Printf.printf "%d steps failed\nTotal time: %f" !c (Sys.time ())*)
 
 
 (*
 1. Ca termine plus
-2. mettre un r0 pour pouvoir avoir satisfaction*)
+2. mettre un r0 pour pouvoir avoir satisfaction
+3. Attention à remove_from_couplages*)
