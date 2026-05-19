@@ -21,7 +21,7 @@ let reseau_make p n = (* Construit un réseau. f est une fonction de constructio
 
 
 let test_ajout () = 
-  let r = reseau_make 1. 10 in 
+  let r = reseau_make 1. 60 in 
   F.affiche_reseau r;
   let _ = F.node_init 1. r in 
   F.affiche_reseau r
@@ -35,6 +35,17 @@ let affiche_couplages r =
     Printf.printf "Couplage de %d\n" (F.id_n node);
     F.affiche_node_array (F.couplage node) 0
   done
+
+
+let test_copy () = 
+  F.set_b 2;
+
+  let r = reseau_make 1. 30 in 
+  F.protocol r;
+  let r1 = F.reseau_copy r in 
+  F.affiche_reseau r;
+  print_newline ();
+  F.affiche_reseau r1
 
 
 let test_modif_lovers () = 
@@ -57,58 +68,66 @@ let test_modif_lovers () =
 
 
 let test_node_add () = 
-  F.set_b 2;
-  let r = reseau_make 1. 10 in 
-  F.protocol r;
-  Printf.printf "------- Réseau et couplage après protocol: \n";
-  F.affiche_reseau r;
-    
+  let r = reseau_make 1. 60 in 
 
-  let _ = F.node_add_rand 1. r in
-  Printf.printf "------- Réseau après ajout:\n";
-  F.affiche_reseau r
+  for k = 0 to 2 do
+    F.affiche_reseau r;
+    F.protocol r;
+    Printf.printf "------- Réseau et couplage après protocol: \n";
+    F.affiche_reseau r;
+      
+    let _ = F.node_add_rand 1. r in
+    Printf.printf "------- Réseau après ajout:\n";
+    F.affiche_reseau r
+  done
 
 
 let test_churn p t n c = (*période de churn t, nombre initial n de noeuds,
                   p est une proba de présence d'arête, c'est pas très important
                   *)
-  for b = 2 to 3 do
-    F.set_b b;
-    for k = 0 to 39 do
-      Printf.printf "Numéro %d..." k;
-      let r = reseau_make p n in 
-      (*let f = Stdlib.open_out_gen [Open_append] 4 "time.txt" in*)
-      flush_all ();
-      F.protocol r;
+    F.set_b 2;
+      let r = ref (reseau_make p n) in 
+      let f = Stdlib.open_out_gen [Open_append] 4 "time.txt" in
+      F.affiche_reseau !r;
+      F.protocol !r;
       for i = 0 to 200 do 
+        Printf.printf "\n\n%d\n" i;
         let t1 = Sys.time () in 
-        let modified = F.node_add_rand p r in
+        F.affiche_reseau !r;
+        let r0 = F.reseau_copy !r in
+        print_string "copied ok\n";
+        F.affiche_reseau r0;
+        let modified = F.node_add_rand p !r in
+        print_string "added ok\n";
+        F.affiche_unloving !r;
         Printf.printf "%d\n" modified;
-        F.affiche_reseau r;
-        (try
-          F.protocol r
-        with Failure(s) ->  (*Echec, tant pis*)
-          incr c);
-        let t2 = Sys.time () in 
-        if t2 -. t1 > t then 
-          failwith "Echec: le churn time n'a pas laissé le temps de finir le calcul"
-        else
-          ()(*Printf.fprintf f "(%d, %d, %f, %d), \n" (F.get_b ()) (F.len_reseau r) (t2 -. t1) modified;*)
+        F.affiche_reseau !r;
+        try
+          F.protocol !r;
+          let t2 = Sys.time () in 
+          if t2 -. t1 > t then 
+            failwith "Echec: le churn time n'a pas laissé le temps de finir le calcul"
+          else
+            Printf.fprintf f "(%d, %d, %f, %d), \n" (F.get_b ()) (F.len_reseau !r) (t2 -. t1) modified;
+        with Failure(s) -> (
+          incr c;
+          Printf.printf "FAILED! %s" s;
+          F.affiche_reseau !r;
+          r := F.reseau_copy r0
+        ) 
       done
-    done
-  done
 
 
 let () = 
 
-  test_node_add ()
+    test_node_add ()
 
   (*let c = ref 0 in
   test_churn 1. 1. 10 c;
-  Printf.printf "%d steps failed\nTotal time: %f" !c (Sys.time ())*)
+  print_int !c*)
 
 
 (*
-1. Ca termine plus
-2. mettre un r0 pour pouvoir avoir satisfaction
-3. Attention à remove_from_couplages*)
+1. Ca termine plus mais seulement rarement; trouver comment les oublier
+2. Les len de config ne sont plus à jour après reseau_copy ou node_add
+*)

@@ -62,3 +62,7 @@ noeud q de marque 200 chez n et de marque 50 chez p, alors on casse la liaison.
 
 Lorsqu'on retire un sommet, c'est plus simple: il suffit de détruire toutes les liaisons dans lesquelles
 il est présent et de relancer le protocol à partir de là.
+
+On autorise (au moins provisoirement) de casser des liaisons loving
+vu qu'a priori on est pas sûr sûr qu'on retire assez de couples lors de
+la modification locale. Concrètement casse_match true dans proposal

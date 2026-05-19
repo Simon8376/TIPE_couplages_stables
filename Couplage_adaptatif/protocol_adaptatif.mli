@@ -5,8 +5,6 @@ type champ
 type trileen
 exception Ok
 
-val affiche_liste_int: int list -> unit
-
 val node_init: float -> reseau -> node 
 val node_del: reseau -> node -> int
 val reseau_init: unit -> reseau
@@ -29,6 +27,7 @@ val id_n: node -> int
 val noeud: champ -> node
 val get_b: unit -> int
 val set_b: int -> unit
+val affiche_unloving: reseau -> unit
 val reseau_copy: reseau -> reseau 
 val satisfaction: reseau -> float
 val modif_lovers: reseau -> node -> int
