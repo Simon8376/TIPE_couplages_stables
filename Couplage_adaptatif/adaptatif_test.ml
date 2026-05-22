@@ -37,15 +37,22 @@ let affiche_couplages r =
   done
 
 
-let test_copy () = 
-  F.set_b 2;
+let est_trie r = 
+  for i = 0 to F.len_reseau r -1 do 
+    assert(F.est_trie (F.config (F.nth_noeuds r i)) 0)
+  done
 
-  let r = reseau_make 1. 30 in 
+
+let test_copy () = 
+  F.set_b 10;
+
+  let r = reseau_make 1. 200 in 
   F.protocol r;
   let r1 = F.reseau_copy r in 
   F.affiche_reseau r;
   print_newline ();
-  F.affiche_reseau r1
+  F.affiche_reseau r1;
+  est_trie r1
 
 
 let test_modif_lovers () = 
@@ -82,49 +89,50 @@ let test_node_add () =
   done
 
 
-let test_churn p t n c = (*période de churn t, nombre initial n de noeuds,
+let test_churn p t n c tot = (*période de churn t, nombre initial n de noeuds,
                   p est une proba de présence d'arête, c'est pas très important
                   *)
-    F.set_b 2;
-      let r = ref (reseau_make p n) in 
-      let f = Stdlib.open_out_gen [Open_append] 4 "time.txt" in
-      F.affiche_reseau !r;
-      F.protocol !r;
-      for i = 0 to 200 do 
-        Printf.printf "\n\n%d\n" i;
-        let t1 = Sys.time () in 
-        F.affiche_reseau !r;
-        let r0 = F.reseau_copy !r in
-        print_string "copied ok\n";
-        F.affiche_reseau r0;
-        let modified = F.node_add_rand p !r in
-        print_string "added ok\n";
-        F.affiche_unloving !r;
-        Printf.printf "%d\n" modified;
-        F.affiche_reseau !r;
+    let f = Stdlib.open_out_gen [Open_append] 4 "time.txt" in
+    for b = 1 to 2 do 
+      F.set_b b;
+      let k = ref 0 in 
+      while !k < 80 do
+        Printf.printf "%d\n" !k;
         try
+          let r = ref (reseau_make p n) in 
+          let values = Array.make 201 (0, 0, 0., 0, 0.) in
+          let t1 = Sys.time () in
           F.protocol !r;
-          let t2 = Sys.time () in 
-          if t2 -. t1 > t then 
-            failwith "Echec: le churn time n'a pas laissé le temps de finir le calcul"
-          else
-            Printf.fprintf f "(%d, %d, %f, %d), \n" (F.get_b ()) (F.len_reseau !r) (t2 -. t1) modified;
-        with Failure(s) -> (
-          incr c;
-          Printf.printf "FAILED! %s" s;
-          F.affiche_reseau !r;
-          r := F.reseau_copy r0
-        ) 
-      done
+          let t2 = Sys.time () in
+          values.(0) <- (F.get_b ()), (F.len_reseau !r), (t2 -. t1), 0, (F.satisfaction !r);
+          for i = 1 to 200 do 
+            est_trie !r;
+            let t1 = Sys.time () in 
+            let modified = F.node_add_rand p !r in
+            F.protocol !r;
+            let t2 = Sys.time () in 
+            if t2 -. t1 > t then 
+              failwith "Echec: le churn time n'a pas laissé le temps de finir le calcul"
+            else 
+              values.(i) <- (F.get_b ()), (F.len_reseau !r), (t2 -. t1), modified, (F.satisfaction !r)
+          done;
+          incr k;
+          incr tot;
+          for i = 0 to 200 do 
+            let v, w, x, y, z = values.(i) in
+            Printf.fprintf f "(%d, %d, %f, %d, %f), \n" v w x y z 
+          done;
+        with _ -> (incr c; incr tot)
+      done 
+    done
 
 
 let () = 
 
-    test_node_add ()
-
-  (*let c = ref 0 in
-  test_churn 1. 1. 10 c;
-  print_int !c*)
+  let c = ref 0 in
+  let tot = ref 0 in
+  test_churn 1. 1. 10 c tot;
+  Printf.printf "%d failed out of %d\n" !c !tot
 
 
 (*

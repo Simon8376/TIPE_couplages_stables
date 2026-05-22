@@ -8,6 +8,7 @@ exception Ok
 val node_init: float -> reseau -> node 
 val node_del: reseau -> node -> int
 val reseau_init: unit -> reseau
+val est_trie: pfile -> int -> bool
 
 val protocol: reseau -> unit 
 val protocol_vtest: reseau -> unit
