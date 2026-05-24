@@ -33,6 +33,9 @@ and champ = { (*Structure modélisant une arête depuis un noeud*)
   n : node;
   etat : trileen; (*indique si node est dans le couplage ou pas, relevant seulement pour config*)
   marque : int;
+  tmps_debut : int; (*Indique l'étape de création du lien. Une étape
+                    c'est un ajout de noeud (i entre 0 et 150). Ce n'est 
+                    intéressant que dans un champ de couplage*)
 }
 
 type reseau = {
@@ -41,6 +44,8 @@ type reseau = {
   mutable len_unloving : int; (*Taille de unloving. Le protocol s'arrête quand ça atteint 0*)
   mutable unloving : node option array; (*tableau des noeuds dont le couplage n'est pas composé que de peers loving. Idem niveau node.id *)
   mutable num: int; (*C'est le max des indices des noeuds du réseau +1. Ca permet d'ajouter des noeuds*)
+  mutable step : int; (*Etape actuelle (ajout de node => différente étape)*)
+  mutable tmps_vie : int list; (*Liste de temps de vie d'arêtes qui ont été supprimées*)
 }
 
 exception Ok
@@ -113,7 +118,7 @@ let has_before pfile e node n =
 
 
 
-let pfile_insere pfile e node etat marque =
+let pfile_insere r pfile e node etat marque =
   let i = ref (pfile.len.(e) -1) in
   (if pfile.tab.(e).(!i+1) <> None || (!i >= 0 && pfile.tab.(e).(!i) = None) then
     (
@@ -133,7 +138,7 @@ let pfile_insere pfile e node etat marque =
         raise Ok
     done
   with Ok -> ());
-  pfile.tab.(e).(!i+1) <- Some {n = node; etat = etat; marque = marque};
+  pfile.tab.(e).(!i+1) <- Some {n = node; etat = etat; marque = marque; tmps_debut = r.step};
   pfile.len.(e) <- pfile.len.(e) +1
 
 
@@ -249,8 +254,8 @@ let connections_init p reseau = (*Génère une liste de préférence selon erdos
         else
           0
       in
-      pfile_insere pf 1 node Unmatched m;
-      pfile_insere pf 0 node Unmatched m)
+      pfile_insere reseau pf 1 node Unmatched m;
+      pfile_insere reseau pf 0 node Unmatched m)
   done;
   assert(pf.len.(0) = reseau.len_noeuds);
   
@@ -295,13 +300,13 @@ let node_init p reseau = (*Prend en argument une fonction de construction de con
       |  Some c when c.n.id = node.id -> failwith "Gunk"
       |  Some c -> (
         try
-          pfile_insere c.n.config e node Unmatched c.marque
+          pfile_insere reseau c.n.config e node Unmatched c.marque
         with Failure(s) -> (
           if s = "Nein" then ( (*C'est artificiel*)
             (*let l = c.n.config.len.(e) in*)
             corrige_len c.n.config e;
             (*Printf.printf "Corrected len of %d from %d to %d\n" c.n.id l c.n.config.len.(e);*)
-            pfile_insere c.n.config e node Unmatched c.marque)
+            pfile_insere reseau c.n.config e node Unmatched c.marque)
           else 
             failwith s))
     done
@@ -326,23 +331,29 @@ let nth_noeuds reseau i =
   |  Some n -> n
 
 
-let remove_nth pfile e j =
+let remove_nth r pfile e j =
   if pfile.len.(e) = 0 then failwith "Nothing to remove"
   else
+    let start = 
+      match pfile.tab.(e).(j) with 
+      |  None -> failwith "Rien"
+      |  Some node -> node.tmps_debut 
+    in
     for i = j to pfile.len.(e) -2 do 
       switch pfile e i (i+1)
     done;
     pfile.tab.(e).(pfile.len.(e) -1) <- None;
-    pfile.len.(e) <- pfile.len.(e) -1
+    pfile.len.(e) <- pfile.len.(e) -1;
+    r.step - start
 
 
-let rm_config e node peer = (*Retire peer de la config de node*)
+let rm_config r e node peer = (*Retire peer de la config de node*)
   try
     let pfile = node.config in
     for j = pfile.len.(e) -1 downto 0 do
       match pfile.tab.(e).(j) with
       | Some c when c.n.id = peer.id -> (
-        remove_nth pfile e j;
+        let _ = remove_nth r pfile e j in
         raise Ok
       )
       | _ -> ()
@@ -419,7 +430,6 @@ let nullify_unloving reseau node = (*On enlève node du reseau.unloving et on me
 
       node_last.ind_unloving <- node.ind_unloving;
       node.ind_unloving <- -1);                          (*SI JAMAIS TU AS UNE ERREUR DE MEMOIRE C'EST POSSIBLEMENT A CAUSE DE CA*)
-    (*remove_from_configs reseau node*)
   end
 
 
@@ -432,6 +442,8 @@ let reseau_init () =
     unloving = unloving;
     len_unloving = 0;
     num = 1;
+    step = 0;
+    tmps_vie = [];
   } in 
   r
 
@@ -449,10 +461,10 @@ let mem_lover node peer =
   with Ok -> true
 
 
-let try_change pfile e i b peer = 
+let try_change pfile e i b peer = (*On ne change que le flag*)
   match pfile.tab.(e).(i) with
     | Some p when p.n.id = peer.id -> (
-      pfile.tab.(e).(i) <- Some {n = p.n; etat = b; marque = p.marque};
+      pfile.tab.(e).(i) <- Some {n = p.n; etat = b; marque = p.marque; tmps_debut = p.tmps_debut};
   
       (*Printf.printf "Flag changed of %d" peer.id;*)
       raise Ok)
@@ -494,7 +506,9 @@ let casse_match reseau node peer e =
       let matc = node.couplage.tab.(0).(i) in 
       let f = flag matc in
       if id matc = peer.id && (e || f = Unloving) then (
-        remove_nth node.couplage 0 i;
+        let duree = remove_nth reseau node.couplage 0 i in 
+        if f = Loving then 
+          reseau.tmps_vie <- duree :: reseau.tmps_vie;
         
         (match flag matc with
         |  Unloving -> (*Le couple removed n'est pas loving: il est encore dans la config normalement*)
@@ -550,8 +564,8 @@ let traitement_loving node peer reseau =
     remove_from_couplages reseau peer false
     (*Printf.printf "Nullified \n"*)
   end;
-  rm_config 0 node peer; (*A priori un peu bête; on devrait juste aller chercher le dernier*)
-  rm_config 0 peer node
+  rm_config reseau 0 node peer; (*A priori un peu bête; on devrait juste aller chercher le dernier*)
+  rm_config reseau 0 peer node
 
 
 let check_loving node peer reseau = (*Vérification locale*)
@@ -563,26 +577,6 @@ let check_loving node peer reseau = (*Vérification locale*)
 
 
 
-let node_del reseau node = 
-  (*Retrait de node de reseau et renvoie le nombre de couples brisés par ce retrait
-  On retire des versions de travail ET globale*)
-  let c = node.couplage.len.(0) in
-  remove_from_couplages reseau node true;
-  for i = 0 to reseau.len_noeuds -1 do
-    match reseau.noeuds.(i) with 
-    |  None -> failwith "Nan"
-    |  Some n -> 
-      (try 
-        rm_config 0 n node; 
-        rm_config 1 n node 
-      with Failure(s) -> ());
-  done;
-  nullify_noeuds reseau node;
-  nullify_unloving reseau node;
-  c
-
-
-
 
 let couplement node peer reseau marque = (*On a trouvé une paire devant être couplée: 
   On ajoute la paire au couplage et 
@@ -590,8 +584,8 @@ let couplement node peer reseau marque = (*On a trouvé une paire devant être c
     on les enlève du unloving du réseau et on réduit le unloving du reseau si ils sont complètement couplés avec des loving*)
   (*Printf.printf "Coupling: %d %d %d" node.id peer.id marque;*)
 
-  pfile_insere node.couplage 0 peer Unloving marque;
-  pfile_insere peer.couplage 0 node Unloving marque;
+  pfile_insere reseau node.couplage 0 peer Unloving marque;
+  pfile_insere reseau peer.couplage 0 node Unloving marque;
   (*print_string "Inserted";*)
 
   set_flag_in_pfile node.config 0 peer Unloving None;
@@ -643,7 +637,7 @@ let casse_match_permissif r c n =
     if etat = Unloving then 
       set_flag_in_pfile node.config 0 peer Unmatched None
     else if etat = Loving then
-      pfile_insere node.config 0 peer Unmatched c.marque
+      pfile_insere r node.config 0 peer Unmatched c.marque
     else 
       failwith "Unmatched dans couplage"
   in
@@ -894,6 +888,10 @@ let id_n node =
   node.id
 
 
+let tmps_vie r = 
+  r.tmps_vie
+
+
 let affiche_unloving reseau = 
   print_string "Unloving: ";
   for i = 0 to reseau.len_unloving -1 do 
@@ -980,7 +978,7 @@ let node_init_without_pfile id ind_n ind_u n_lov =
 
 
 
-let copy_tab pf1 pf2 e r1 = 
+let copy_tab r pf1 pf2 e r1 = 
   let l1 = pf1.len.(e) in 
   let l2 = pf2.len.(e) in
   for i = 0 to l1 -1 do 
@@ -994,14 +992,14 @@ let copy_tab pf1 pf2 e r1 =
         ()
       |  Some ch -> 
         let n = nth_noeuds r1 ch.n.ind_noeuds in
-        pfile_insere pf1 e n ch.etat ch.marque
+        pfile_insere r pf1 e n ch.etat ch.marque
   done
 
 
 
-let copy_pfiles pf1 pf2 r1 = (*copie pf2 dans pf1. pf1 est issu de r1*)
+let copy_pfiles r pf1 pf2 r1 = (*copie pf2 dans pf1. pf1 est issu de r1*)
   for e = 0 to 1 do
-    copy_tab pf1 pf2 e r1
+    copy_tab r pf1 pf2 e r1
   done
   
 
@@ -1010,6 +1008,8 @@ let reseau_copy r0 =
   r.len_unloving <- r0.len_unloving;
   r.len_noeuds <- r0.len_noeuds;
   r.num <- r0.num;
+  r.tmps_vie <- r0.tmps_vie;
+  r.step <- r0.step; 
 
   (*copie de r0.noeuds*)
   for i = 0 to r.len_noeuds -1 do 
@@ -1042,8 +1042,8 @@ let reseau_copy r0 =
     |  Some n1, Some n2 -> 
       n1.config.len <- n2.config.len;
       n1.couplage.len <- n2.couplage.len;
-      copy_pfiles n1.couplage n2.couplage r;
-      copy_pfiles n1.config n2.config r
+      copy_pfiles r n1.couplage n2.couplage r;
+      copy_pfiles r n1.config n2.config r
   done;
 
   r
@@ -1070,39 +1070,30 @@ let marque_in_config e node peer = (*Renvoie la marque de peer dans la config de
 
 
 
-let modif_lovers reseau node = (*S'assure que toutes les paires formées
+let modif_lovers r node = (*S'assure que toutes les paires formées
   ont une marque inférieure à celle proposée par un couplage avec node.
   On casse celles pour lesquelles ce n'est pas le cas.
   On renvoie le nombre de modifications.*)
   let c = ref 0 in
-  for i = 0 to reseau.len_noeuds -1 do 
-    try
-      match reseau.noeuds.(i) with 
-      |  None -> failwith "NONONO"
-      |  Some peer -> 
-        let m = marque_in_config 0 peer node in 
+  for i = 0 to r.len_noeuds -1 do 
+    match r.noeuds.(i) with 
+    |  None -> failwith "NONONO"
+    |  Some peer -> 
+      try
+        let m = marque_in_config 1 peer node in (*normalement ça y est*)
         for j = peer.couplage.len.(0) -1 downto 0 do 
           match peer.couplage.tab.(0).(j) with 
           |  None -> failwith "BOUBOUBOU"
           |  Some ch -> 
             if ch.marque < m then (
-              let _ = casse_match reseau peer ch.n true in
-              let _ = casse_match reseau ch.n peer true in
+              let _ = casse_match r peer ch.n true in
+              let _ = casse_match r ch.n peer true in
               incr c
             )
+            
         done
-    with Ok -> ()
+      with Ok -> assert(node.id = peer.id) 
   done;
-  !c
-
-
-
-let node_add_rand p r = (*Ajoute un noeud aléatoire
-  On renvoie le nombre de couples modifiés lors de modif_lovers
-  *)
-  let n = node_init p r in
-  let c = modif_lovers r n in 
-
 
   (*Puis il faut rajouter des noeuds dans les configs des gens dans 
   unloving. Potentiellement, à l'issue du dernier calcul de couplage, 
@@ -1121,7 +1112,7 @@ let node_add_rand p r = (*Ajoute un noeud aléatoire
       |  None -> ()
       |  Some ch -> 
         if ch.n.ind_unloving <> -1 then 
-          pfile_insere pf e1 ch.n Unmatched ch.marque;
+          pfile_insere r pf e1 ch.n Unmatched ch.marque;
     done;
   in
 
@@ -1159,4 +1150,58 @@ let node_add_rand p r = (*Ajoute un noeud aléatoire
           
       )
   done;
+  !c
+
+
+
+let node_add_rand p r = (*Ajoute un noeud aléatoire
+  On renvoie le nombre de couples modifiés lors de modif_lovers
+  *)
+  let n = node_init p r in
+  let c = modif_lovers r n in
+  r.step <- r.step +1;
   c
+
+
+
+let retrieve_tmps r = (*Récupère les temps de vie de toutes les arềtes présentes dans les couplages*)
+  for i = 0 to r.len_noeuds -1 do 
+    match r.noeuds.(i) with 
+    |  None -> failwith ""
+    |  Some n -> 
+      for j = 0 to n.couplage.len.(0) -1 do 
+        match n.couplage.tab.(0).(j) with 
+        |  None -> failwith ""
+        |  Some p -> 
+          r.tmps_vie <- (r.step - p.tmps_debut) :: r.tmps_vie 
+      done;
+  done
+
+
+let node_del reseau node = 
+  (*Retrait de node de reseau et renvoie le nombre de couples brisés par ce retrait
+  On retire des versions de travail ET globale*)
+  let c = ref (node.couplage.len.(0)) in
+  for i = 0 to !c-1 do 
+    match node.couplage.tab.(0).(i) with 
+    |  None -> failwith ""
+    |  Some peer -> 
+      c := !c + modif_lovers reseau node 
+  done;
+  remove_from_couplages reseau node true;
+  for i = 0 to reseau.len_noeuds -1 do
+    match reseau.noeuds.(i) with 
+    |  None -> failwith "Nan"
+    |  Some n when n.id <> node.id -> 
+      rm_config reseau 1 n node;
+      (try 
+        rm_config reseau 0 n node
+      with Failure(s) -> ());
+    |  _ -> ()
+  done;
+  nullify_noeuds reseau node;
+  if node.ind_unloving <> -1 then 
+    nullify_unloving reseau node;
+  reseau.step <- 1+reseau.step;
+  !c
+

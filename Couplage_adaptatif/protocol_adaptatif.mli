@@ -28,8 +28,10 @@ val id_n: node -> int
 val noeud: champ -> node
 val get_b: unit -> int
 val set_b: int -> unit
+val tmps_vie: reseau -> int list
 val affiche_unloving: reseau -> unit
 val reseau_copy: reseau -> reseau 
 val satisfaction: reseau -> float
 val modif_lovers: reseau -> node -> int
 val node_add_rand: float -> reseau -> int
+val retrieve_tmps: reseau -> unit
