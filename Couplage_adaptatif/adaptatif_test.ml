@@ -93,6 +93,10 @@ let test_node_del () =
   let r = reseau_make 1. 20 in 
   F.protocol r;
   F.affiche_reseau r;
+  let _ = F.node_add_rand 1. r in 
+  F.affiche_reseau r;
+  F.protocol r; 
+  F.affiche_reseau r;
   let _ = F.node_del r (F.nth_noeuds r 0) in 
   F.affiche_reseau r;
   F.protocol r;
@@ -146,37 +150,34 @@ let test_churn_add p n c tot num_ajout = (*On ajoute num_ajout noeuds à un rés
 let rec churn f p n c tot fin = 
   try
     let r = ref (reseau_make p n) in 
-    let values = Array.make fin (' ', 0, 0., 0, 0.) in
+    let values = Array.make (2*fin) (' ', 0, 0, 0., 0, 0.) in
     for i = 0 to fin-1 do
-      Printf.printf "%d\n" i;
       let modified = F.node_add_rand p !r in
-      print_string "mod ok\n";
       est_trie !r;
       let t1 = Sys.time () in
       F.protocol !r;
-      print_string "protocol1 ok\n";
       let t2 = Sys.time () in
-      values.(i) <- 'A', (F.get_b ()), (t2 -. t1), modified, (F.satisfaction !r);
+      values.(2*i) <- 'A', (F.get_b ()), n, (t2 -. t1), modified, (F.satisfaction !r);
       
       let k = Random.int (F.len_reseau !r) in 
       let modified = F.node_del !r (F.nth_noeuds !r k) in
       est_trie !r;
-      try
-        let t1 = Sys.time () in
-        F.protocol !r;
-        print_string "protocol2 ok\n";
-        let t2 = Sys.time () in 
-        values.(i) <- 'R', (F.get_b ()), (t2 -. t1), modified, (F.satisfaction !r)
-      with Failure(s) -> 
-        print_string s
+      let t1 = Sys.time () in
+      F.protocol !r;
+      let t2 = Sys.time () in 
+      values.(2*i+1) <- 'R', (F.get_b ()), n, (t2 -. t1), modified, (F.satisfaction !r)
     done;
     incr tot;
     F.retrieve_tmps !r;
-    for i = 0 to fin-1 do 
-      let c, w, x, y, z = values.(i) in
-      Printf.fprintf f "(%c, %d, %f, %d, %f, %f), \n" c w x y z (mean (F.tmps_vie !r));
+    Printf.fprintf f "('0', %d, %d, 0., 0, %f), \n" (F.get_b ()) n (mean (F.tmps_vie !r));
+    for i = 0 to 2*fin-1 do 
+      let c, v, w, x, y, z = values.(i) in
+      Printf.fprintf f "('%c', %d, %d, %f, %d, %f), \n" c v w x y z;
     done
-  with Failure(s) -> churn f p n c tot fin
+  with Failure(s) -> (
+    incr tot;
+    incr c;
+    churn f p n c tot fin)
 
 
 
@@ -195,12 +196,10 @@ let test_churn_add_del p c tot fin = (*Ajout puis retrait de fin noeuds à un r�
 
 let () = 
 
-  test_node_del ()
-
-  (*let fin = 30 in
+  let fin = 30 in
   let c = ref 0 in
   let tot = ref 0 in
   test_churn_add_del 1. c tot fin;
-  Printf.printf "%d failed out of %d\n" !c !tot*)
+  Printf.printf "%d failed out of %d\n" !c !tot
 
 

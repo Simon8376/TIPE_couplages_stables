@@ -406,7 +406,14 @@ let affiche_reseau reseau = (*Prends un node option array*)
     match reseau.noeuds.(i) with 
     | None -> print_string "None, "
     | Some node -> 
-        Printf.printf "Id: %d, len_couplage: %d, len_config_t: %d, len_config_g: %d, loved: %d\n" node.id node.couplage.len.(0) node.config.len.(0) node.config.len.(1) node.num_loving
+      let n = node.couplage.len.(0) in 
+      if n = 0 then 
+        Printf.printf "Id: %d, len_couplage: %d, len_config_t: %d, len_config_g: %d, loved: %d, pref: None\n" node.id node.couplage.len.(0) node.config.len.(0) node.config.len.(1) node.num_loving
+      else
+        match node.couplage.tab.(0).(n-1) with
+        |  None -> failwith ""
+        |  Some best ->
+          Printf.printf "Id: %d, len_couplage: %d, len_config_t: %d, len_config_g: %d, loved: %d, pref: %d\n" node.id node.couplage.len.(0) node.config.len.(0) node.config.len.(1) node.num_loving best.n.id
   done;
   print_string "Unloving: \n";
   affiche_tab reseau.unloving;
@@ -1182,13 +1189,14 @@ let node_del reseau node =
   (*Retrait de node de reseau et renvoie le nombre de couples brisés par ce retrait
   On retire des versions de travail ET globale*)
   let c = ref (node.couplage.len.(0)) in
+  let arr = Array.copy node.couplage.tab.(0) in
+  remove_from_couplages reseau node true;
   for i = 0 to !c-1 do 
-    match node.couplage.tab.(0).(i) with 
+    match arr.(i) with 
     |  None -> failwith ""
     |  Some peer -> 
       c := !c + modif_lovers reseau node 
   done;
-  remove_from_couplages reseau node true;
   for i = 0 to reseau.len_noeuds -1 do
     match reseau.noeuds.(i) with 
     |  None -> failwith "Nan"
