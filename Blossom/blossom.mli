@@ -4,7 +4,8 @@ type matching = int option array
 exception Fin of bool
 exception Found of matching
 
-val empty_matching : graph -> matching 
+
+val empty_matching : graph -> matching
 val mate : matching -> int -> int -> unit 
 val unmate : matching -> int -> unit 
 val free_vertices : matching -> int list 
