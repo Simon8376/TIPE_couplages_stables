@@ -423,6 +423,7 @@
             \includegraphics[width=0.7\linewidth]{chart_fab_log.png}
             \caption{Logarithme du temps de convergence de $STATIQUE$}
         \end{figure}
+    Attendu: $O(2^{n+b})$
 \end{frame}
 
 
@@ -442,7 +443,7 @@
         \begin{figure}
             \centering
             \includegraphics[width=0.7\linewidth]{chart_dyna_t.png}
-            \caption{Ajout successifs de 180 noeuds à partir de $|R|=20$}
+            \caption{Ajout successifs de 180 noeuds à partir de $|R|=10$}
         \end{figure}
 \end{frame}
 
@@ -459,7 +460,7 @@
     \end{itemize}
     Mesure de satisfaction\footnote{\textit{G. Georgiadis, M. Papatriantafilou}} pour un noeud $i$:
         \begin{equation}
-            S_i = \frac{c_i}{b} + \sum_{j}{\frac{R_j - C_j}{L_j b}}
+            S_i = \frac{c_i}{b} + \sum_{j}{\frac{R_j - C_j}{L_j b} \in [0, 1]}
         \end{equation}
     Intuitivement, elle quantifierait la stabilité du couplage.
 \end{frame}
@@ -484,11 +485,10 @@
 
 \begin{frame}
     \frametitle{Méthode de modification locale - Résultats}
-    Mettre le span plutot que la sat
     \begin{figure}
         \centering
-        \includegraphics[width=0.8\linewidth]{chart_adap_t_sat.png}
-        \caption{Ajout et retrait successifs à$|R|$ fixé}
+        \includegraphics[width=0.8\linewidth]{chart_adap_t_span.png}
+        \caption{Ajout et retrait successifs à $|R|$ fixé}
     \end{figure}
 \end{frame}
 
