@@ -10,4 +10,4 @@ Lorsqu'on rencontre un cycle, on se coupe. S'en suit une étude de l'efficacité
 Elle n'est pas très concluante...
 - Couplage_dynamique: : Une adaptation naïve de la précédente implémentation dans le cas d'un graphe dynamique, dont les arêtes et sommets sont modifiés périodiquement.
 - Couplage_adaptatif: Une implémentation moins naïve inspirée du travail de Gorgiadis/Papatriantafilou.
-
+- Supports: Il s'y trouve notamment mon rapport de TIPE pour l'oral des ENS et mon support de présentation.

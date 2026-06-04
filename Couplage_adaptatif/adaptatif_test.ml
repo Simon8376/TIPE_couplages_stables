@@ -113,11 +113,11 @@ let mean liste =
 let test_churn_add p n c tot num_ajout = (*On ajoute num_ajout noeuds à un réseau de taille 
                                             initiale n
                                             p = 1., c = nbr d'échecs, tot = nbr de tours*)
-    let f = Stdlib.open_out_gen [Open_append] 4 "time2.txt" in
+    let f = Stdlib.open_out_gen [Open_append] 4 "time.txt" in
     for b = 1 to 2 do 
       F.set_b b;
       let k = ref 0 in 
-      while !k < 80 do
+      while !k < 40 do
         try
           let r = ref (reseau_make p n) in 
           let values = Array.make (num_ajout +1) (0, 0, 0., 0, 0.) in
@@ -184,10 +184,10 @@ let rec churn f p n c tot fin =
 let test_churn_add_del p c tot fin = (*Ajout puis retrait de fin noeuds à un réseau
                         c = nbr d'échecs, tot = nbr de protocols lancés, p = 1.
                         fin = nbr de tours/2*)
-    let f = Stdlib.open_out_gen [Open_append] 4 "time.txt" in
+    let f = Stdlib.open_out_gen [Open_append] 4 "time2.txt" in
     for b = 1 to 2 do 
       F.set_b b;
-      for n = 20 to 100 do 
+      for n = 20 to 150 do 
         churn f p n c tot fin;
         Printf.printf "%d\n" n
       done 
@@ -196,10 +196,10 @@ let test_churn_add_del p c tot fin = (*Ajout puis retrait de fin noeuds à un r�
 
 let () = 
 
-  let fin = 30 in
+  let fin = 130 in
   let c = ref 0 in
   let tot = ref 0 in
-  test_churn_add_del 1. c tot fin;
+  test_churn_add 1. 20 c tot fin;
   Printf.printf "%d failed out of %d\n" !c !tot
 
 

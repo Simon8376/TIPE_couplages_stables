@@ -457,24 +457,17 @@ let rec remove_from_couplages reseau node = (*Retire node de tous les couplages 
   for i = 0 to reseau.len_unloving -1 do
     let p = nth_unloving reseau i in
     let pfile = p.couplage in 
-      (*Printf.printf "Removing from %d's matching: " p.id;*)
         let i = ref 0 in
         while !i < pfile.len - 1 do
-          (*Printf.printf "node %d -> " (id pfile.tab.(!i));*)
           if id pfile.tab.(!i) = node.id && flag pfile.tab.(!i) = Unloving then (
-              (*print_string "Removing ... ";*)
               remove_nth pfile !i; (*Pas de +1 vu qu'on a tout décalé*)
               set_flag_in_pfile p.config node Unmatched (Some !i);
             )
           else incr i 
         done;
-
-      (*check_loving p reseau;*)                (*On vérifie que le retrait du node n'engendre pas un lover après num_loving*)
-
   done
 
 and traitement_loving node peer reseau = 
-  (*Printf.printf "LOVING between %d and %d - " node.id peer.id;*)(*C'est une loving pair*)
   node.num_loving <- node.num_loving +1;
   peer.num_loving <- peer.num_loving +1;
 
@@ -482,19 +475,15 @@ and traitement_loving node peer reseau =
   set_flag_in_pfile peer.couplage node Loving None;
 
   if node.num_loving = !b then begin (*Le node est complètement couplé qu'avec des paires incassables: on le retire de unloving*)
-    (*Printf.printf "removing node - ";*)
     nullify_unloving reseau node; 
     remove_from_couplages reseau node;
-    (*Printf.printf "Nullified \n "*) 
   end;
   if peer.num_loving = !b then begin
-    (*Printf.printf "removing peer - ";*)
     nullify_unloving reseau peer;
     remove_from_couplages reseau peer;
-    (*Printf.printf "Nullified \n"*)
   end;
   rm_config node peer;
-  rm_config peer node;
+  rm_config peer node
 
 
 and check_loving node peer reseau = 
@@ -555,7 +544,7 @@ let marque ch =
   |  Some c -> c.marque
 
 
-let proposal node peer reseau m = (*Immonde, à nettoyer*)
+let proposal node peer reseau m =
   let wno = worst node in 
   let wpo = worst peer in
   if node.couplage.len = !b && peer.couplage.len = !b then 
@@ -563,12 +552,6 @@ let proposal node peer reseau m = (*Immonde, à nettoyer*)
     |  Some wn, Some wp when (m, m) >= (wp.marque, wn.marque) ->( 
       (*On s'assure que faire un changement garantit de trouver un meilleur état*)
       (*On retire les worst mate de peer et node pour les remplacer avec un autre mate de marque str sup*)
-        (*print_string "changement du couplage - ";*)
-
-        (*pfile_insere node.config wn false;
-        pfile_insere peer.config wp false;*)
-
-
         casse_match wn.n node;
         casse_match wp.n peer;
 
@@ -581,20 +564,10 @@ let proposal node peer reseau m = (*Immonde, à nettoyer*)
 
     |  Some n, None | None, Some n -> failwith "Broken :/"
     | None, None -> failwith "Broken :/"
-    |  _ ->    ()    (*    (*Il n'est pas intéressant de faire de changement*)
-      begin
-        Printf.printf "Pas de changement: num_loving du node: %d - num_loving du peer: %d\nCouplage_node / Couplage_peer / Config_node / Config_peer:\n" node.num_loving peer.num_loving;
-        affiche_node_array node.couplage;
-        affiche_node_array peer.couplage;
-        affiche_node_array node.config;
-        affiche_node_array peer.config
-      end*)
-
+    |  _ ->    ()
   else if node.couplage.len = !b && marque wno <= m then
     match wno with 
     |  Some wn ->( 
-      (*Printf.printf "Ajout chez peer, changement chez node - ";*)
-      (* pfile_insere node.config wn false;*)
       assert(node.num_loving < !b);
       casse_match wn.n node;      (* On enlève le worst du couplage de node pour avoir la place pour peer (qui est mieux)*)
 
@@ -608,8 +581,6 @@ let proposal node peer reseau m = (*Immonde, à nettoyer*)
   else if peer.couplage.len = !b && marque wpo <= m then 
     match wpo with 
     |  Some wp ->( 
-      (*Printf.printf "Ajout chez node, changement chez peer - ";*)
-      (* pfile_insere node.config wn false;*)
       assert(peer.num_loving < !b);
       casse_match wp.n peer;      (* On enlève le worst du couplage de node pour avoir la place pour peer (qui est mieux)*)
 
@@ -620,18 +591,10 @@ let proposal node peer reseau m = (*Immonde, à nettoyer*)
 
     |  None -> failwith "Broken :/"
 
-  else if peer.couplage.len != !b && node.couplage.len != !b then (
-    (*print_string "Ajout aux deux ... ";*)
+  else if peer.couplage.len != !b && node.couplage.len != !b then( (*Ajout aux deux*)
     couplement node peer reseau m
   )
-  else ()(*
-    begin
-        Printf.printf "Pas de changement: num_loving du node: %d - num_loving du peer: %d\nCouplage_node / Couplage_peer / Config_node / Config_peer:\n" node.num_loving peer.num_loving;
-        affiche_node_array node.couplage;
-        affiche_node_array peer.couplage;
-        affiche_node_array node.config;
-        affiche_node_array peer.config
-      end*)
+  else ()
 
 
 let rec choix_best reseau = 
@@ -684,55 +647,33 @@ let rec initiative_best reseau = (*Réalise une initiative via stratégie best m
     |  Some best -> begin 
       if best.n.ind_unloving = -1 || best.n.ind_noeuds = -1 then begin(* On retire de la config et on repioche. Le retrait d'un node cause au plus len_config repiochages -> ok complexité
                                                                       Ceci arrive quand un best couplé apparaît dans la config de node *)
-          (*Printf.printf "Le peer %d a été retiré ...  " best.n.id;*)
           let _ = pfile_defile node.config in 
           ()
       end
       else if best.e != Unmatched then begin
-          (*Printf.printf "Le peer %d a déjà été ajouté - on test_loving ...  " best.n.id;*)
           assert(mem_couplage node best.n);
           check_loving node best.n reseau
       end
       else begin                                     (* On voit s'il est intéressant de coupler node et best -> c'est intéressant pour node, l'est-ce pour best?*)
-        (*Printf.printf "Lancement proposal avec %d (%d), ... " best.n.id best.marque;*)
         proposal node best.n reseau best.marque
       end
     end
   end
 
 else (
-  (*Printf.printf "Absurdité: node %d a une config de taille %d\n" node.id node.config.len;*)
-  (*affiche_reseau reseau;*)
   if !b >= reseau.len_unloving then reseau.len_unloving <- 0
   else exit(1))
-  (*begin 
-  Printf.printf "Ajout de nodes dans la config du node prcq il y en a plus ...  ";
-  let c = connections_init reseau in 
-  (* Copier les nouveaux éléments *)
-  for i = 0 to c.len - 1 do 
-    match c.tab.(i) with
-    | Some n, false when n.id != node.id -> 
-        pfile_insere node.config n false;
-        pfile_insere n.config node false;
-    | _ -> ()
-  done;
-  Printf.printf "New config has length %d ... " node.config.len;
-  reseau.len_unloving <- 0;
-end*)
+
 
 
 
 
 let protocol reseau = 
-  (*print_string "Début protocol\n";*)
   num.num <- 0;
   while reseau.len_unloving > 0 do 
-    (*Printf.printf "Lancement à len_unloving = %d ... " reseau.len_unloving; *)
     initiative_best reseau;
-    (*print_string "Initiative finie\n\n"*)
   done
-  (*print_string "Convergence réussie"*)
-  
+
 
 let protocol_vtest reseau = 
   print_string "Début protocol\n";

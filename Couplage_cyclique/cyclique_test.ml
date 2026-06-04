@@ -1,4 +1,4 @@
-module F = Protocol_simon
+module F = Protocol_cyclique
 
 
 
@@ -158,9 +158,9 @@ let test_del () =
 let () =
 
   let count_broken = ref 0 in
-  for b = 2 to 2 do
+  for b = 1 to 3 do
     F.set_b b;
-    for n = 2 to 15 do
+    for n = 2 to 10 do
       Printf.printf "Test %d nodes and b = %d\n\n" (10*n) b;
       flush stdout;
       for k = 0 to 40 do
