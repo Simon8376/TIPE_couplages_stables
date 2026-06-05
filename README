@@ -9,5 +9,5 @@ On y construit divers graphes selon divers modèles (notamment Erdos-Renyi)
 Lorsqu'on rencontre un cycle, on se coupe. S'en suit une étude de l'efficacité de cette heuristique.
 Elle n'est pas très concluante...
 - Couplage_dynamique: : Une adaptation naïve de la précédente implémentation dans le cas d'un graphe dynamique, dont les arêtes et sommets sont modifiés périodiquement.
-- Couplage_adaptatif: Une implémentation moins naïve inspirée du travail de Gorgiadis/Papatriantafilou.
-- Supports: Il s'y trouve notamment mon rapport de TIPE pour l'oral des ENS et mon support de présentation.
+- Couplage_adaptatif: Une implémentation moins naïve inspirée du travail de Gorgiadis/Papatriantafilou. Elle consiste à ne modifier que localement le couplage lorsque le réseau est modifié.
+- Supports: Il s'y trouve notamment mon rapport de TIPE pour l'oral du concours normalien des ENS et mon support de présentation (ainsi que quelques fichiers de compilation LaTex qui sont à ignorer)
