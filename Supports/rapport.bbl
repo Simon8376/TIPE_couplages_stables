@@ -1,0 +1,28 @@
+\begin{thebibliography}{1}
+
+\bibitem{cohen}
+B.~Cohen.
+\newblock The bittorrent protocol specification.
+\newblock {\em BitTorrent.org: BEP 3}, 2008.
+
+\bibitem{gai}
+A.-T.~Gai et~al.
+\newblock Acyclic preference systems in p2p networks.
+\newblock In {\em European Conference on Parallel Processing}, pages 825--834, Berlin, Heidelberg, 2007.
+
+\bibitem{lebedev}
+D.~Lebedev et~al.
+\newblock On using matching theory to understand p2p network design.
+\newblock {\em International Network Optimization Conference}, 2007.
+
+\bibitem{papa}
+M.~Papatriantafilou G.~Georgiadis.
+\newblock Adaptive distributed b-matching in overlays with preferences.
+\newblock In {\em International Symposium on Experimental Algorithms}, volume~1, pages 104--121, Berlin, Heidelberg, 2012.
+
+\bibitem{mathieu}
+F.~Mathieu.
+\newblock Self-stabilization in preference-based systems.
+\newblock {\em Discrete Applied Mathematics}, 2007.
+
+\end{thebibliography}

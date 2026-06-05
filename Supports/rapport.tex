@@ -35,7 +35,7 @@
 
 
 % Mettez votre titre et votre nom ci-après
-\title{Rapport de TIPE \\
+\title{Rapport de TIPE\\
 Implémenter un réseau pair à pair à l'aide de b-couplages stables}
 \author{S Roux, MPI, \oldstylenums{2025}-\oldstylenums{2026}}
 %% À décommenter si vous ne voulez pas que la date apparaisse explicitement
@@ -72,7 +72,9 @@ Implémenter un réseau pair à pair à l'aide de b-couplages stables}
 \section{Introduction}
 
 
-Les réseaux pair à pair permettent le partage de fichiers de manière décentralisée, où chaque utilisateur se comporte comme un serveur, capable de partager les fichiers qu'il possède [1]. Chaque utilisateur ne peut partager et recevoir qu'un nombre limité de fichiers à la fois, ce qui mène à prioriser certains transferts plutôt que d'autres. Une problématique émerge donc: comment optimiser, à chaque instant, le transfert des segments du fichier (origine et destination), tout en garantissant un temps de convergence algorithmique suffisamment faible (soit inférieur au temps caractéristique d’évolution du réseau)? 
+Les réseaux pair à pair permettent le partage de fichiers de manière décentralisée, où chaque utilisateur se comporte comme un serveur, capable de partager les fichiers qu'il possède \cite{cohen}. 
+Chaque utilisateur ne peut partager et recevoir qu'un nombre limité de fichiers à la fois, ce qui mène à prioriser certains transferts plutôt que d'autres. 
+Une problématique émerge donc: comment optimiser, à chaque instant, le transfert des segments du fichier (origine et destination), tout en garantissant un temps de convergence algorithmique suffisamment faible (soit inférieur au temps caractéristique d’évolution du réseau)? 
 
 
 Un \textit{réseau} désignera par la suite un ensemble $R$ d'utilisateurs, nommés $noeuds$. Pour chaque noeuds $(n, p)\in R^2$, $\sigma(n, p)$ désigne un nombre positif nommé la \textit{marque de p selon n}. La liste $Pref(n)$, nommée \textit{liste de préférence}, ordonne l'ensemble des autres noeuds du réseau par marque croissante. $R$ est dit \textit{statique} s'il est constant au cours du temps, et au contraire \textit{dynamique} si des noeuds peuvent y être ajoutés et retirés.
@@ -129,7 +131,7 @@ En l'absence d'ambiguïté, on appelera $C$ un \textit{couplage}.
 Le choix des transferts de données à effectuer peut être vu comme un problème de couplage stable dans le réseau forméoblème de couplage stable dans le réseau formé par l'ensemble des utilisateurs [2]. La marque $\sigma(n, p)$ y représente l'attractivité de $p$ selon $n$, qui peut par exemple dépendre de la connection de $p$ et des paquets dont $p$ dispose. Intuitivement, un $b$-couplage stable contient pour chaque noeud ses arêtes de plus grande marque, en essayant ainsi de satisfaire un maximum de noeuds. 
 
 
-On commence par implémenter \(Section 2.1\) un algorithme de calcul de b-couplage dans un réseau statique. 
+On commence par implémenter (Section 2.1) un algorithme de calcul de b-couplage dans un réseau statique. 
 Deux problématiques théoriques émergent ensuite lors de l'implémentation d'un réseau par des couplages stables. 
 Premièrement, il s'agit d'étendre les algorithmes de calcul de b-couplage aux réseaux dynamiques. 
 Naïvement, il est possible de recalculer un couplage après toute modification (Section 2.2).
@@ -144,7 +146,8 @@ La détermination systématique d'un couplage stable étant impossible, on s'int
 \subsection{Calcul d'un b-couplage stable dans un réseau statique}
 
 
-On fixe dans la suite un réseau statique $R$ et un entier $b\in \mathbb{N}^*$. Montrons un théorème annoncé en introduction:
+On fixe dans la suite un réseau statique $R$ et un entier $b\in \mathbb{N}^*$. 
+Montrons un théorème \cite{gai} annoncé en introduction:
 
 \vspace{0.2cm}
 \textbf{Théorème: }  Si $\sigma$ est symétrique et injective, alors le graphe de préférence $G$ de $R$ ne contient pas de cycle de longeur au moins 3.
@@ -161,9 +164,15 @@ L'inégalité est stricte par injectivité de $\sigma$. On obtient donc que le c
 $\square$
 \vspace{0.2cm}
 
-En complément de ce résultat, Mathieu (2007) montre qu'un b-couplage stable existe dès lors que $G$ est acyclique. Par soucis de concision, la démonstration n'est pas développée ici. 
+Du moment que chaque utilisateur $X$ classe chaque autre $Y$ selon un critère qui donne 
+le même rôle à $X$ et $Y$ (comme la bande passante entre $X$ et $Y$), la fonction de préférence sera symétrique. 
+Cela justifie de se restreindre à de telles fonctions. 
+Dans la suite de cette partie, on supposera donc que le graphe de préférence de $|R|$ est acyclique.
 
-A cet effet, ce dernier implémente un algorithme de calcul de $b$-couplage stable inspiré par l'algorithme de Gale et Shapley. On le nommera $STATIQUE(R, b)$. 
+En complément de ce théorème, on peut montre qu'un b-couplage stable existe dès lors que $G$ est acyclique \cite{lebedev}. 
+Par soucis de concision, la démonstration n'est pas développée ici.
+
+On implémente un algorithme de calcul de $b$-couplage stable inspiré par l'algorithme de Gale et Shapley \cite{mathieu}. On le nommera $STATIQUE(R, b)$. 
 On définit une \textit{paire bloquante} comme une paire $\{n, p\}$ de noeuds non couplés telle que, soit $n$ ou $p$ n'est pas complètement couplé, soit $n$ et $p$ préfèrent se coupler ensemble plutôt qu'avec le noeud de pire marque avec lequel chacun est couplé.
 
 \vspace{0.2cm}
@@ -190,8 +199,8 @@ On définit une \textit{paire bloquante} comme une paire $\{n, p\}$ de noeuds no
   \end{figure}
 \vspace{0.2cm} 
 
-Par définition, le couplage est stable s'il n'existe pas de paire bloquante. 
-$STATIQUE$ consiste à retirer une à une les paires bloquantes.
+Par définition, un couplage est stable si et seulement si il n'existe pas de paire bloquante. 
+On en déduit alors l'algorithme $STATIQUE$, consistant à retirer une à une les paires bloquantes.
 
 \begin{algorithm}
   \caption{Calcul b-couplage stable statique}
@@ -211,16 +220,17 @@ D'après ce qui précède, $STATIQUE$ construit bien un couplage stable.
 
 La preuve de terminaison de $STATIQUE$ ainsi que certaines précisions sur les choix d'implémentation sont développés en annexe 4.1.
 
-Les figures  sont obtenues à partir de réseau dont les listes de préférences sont produites par la construction de Erd\H{o}s-Rényi: tout noeud $Y$ a probabilité $p$ d'être présente dans la liste de préférence de $X$. La marque $\sigma(X, Y)$ est alors choisie aléatoirement. 
+Les figures 3 à 7 et 9 sont obtenues à partir de réseaux dont les listes de préférences sont produites par la construction de Erd\H{o}s-Rényi: tout noeud $Y$ a probabilité $p$ d'être présente dans la liste de préférence de $X$. 
+La marque $\sigma(X, Y)$ est alors choisie aléatoirement. 
 On note expérimentalement que le temps de convergence ne dépend pas de $p$. 
 On se place donc par la suite dans le cas où $p=1$. 
 
-L'exécution de cet algorithme permet de produire la figure 3.(a).
+L'exécution de $STATIQUE$ permet de produire la figure 3.(a).
 Notons que l'implémentation pratique avait pour objectif d'exposer grossièrement les dépendances de chaque variable et était peu optimisée. 
 Par suite, une meilleure complexité serait possible. 
 
 
-\begin{figure}
+\begin{figure}[H]
 \centering
 \begin{subfigure}{.5\textwidth}
   \centering
@@ -251,15 +261,16 @@ Comme attendu, les profils de temps de convergence sont similaires à ceux obten
 \centering
 \begin{subfigure}{.5\textwidth}
   \centering
-  \includegraphics[width=1.1\linewidth]{chart_dyna_t.png}
-  \caption{}
+  \includegraphics[width=\linewidth]{chart_dyna_t.png}
+  \caption{Ajouts successifs de noeuds à 
+  partir de $|R|=10$}
 \end{subfigure}%
 \begin{subfigure}{.5\textwidth}
   \centering
   \includegraphics[width=\linewidth]{chart_fab_sat.png}
-  \caption{}
+  \caption{Satisfaction via $STATIQUE$}
 \end{subfigure}
-\caption{}
+\caption {}
 \end{figure}
 
 
@@ -272,36 +283,61 @@ Ainsi, la modification du réseau est une opération locale à la suite de laque
  J'ai donc implémenté une adaptation de $STATIQUE$ dans laquelle le retrait d'un noeud $n$ entraîne la suppression 
 \begin{itemize}
 \item des arêtes $\{n, p\}$ dans le couplage, et pour chaque tel $p$,
-\item des arêtes $\{q, r\}$ si $\sigma(q, r) < \sigma(q, p)$ ou $\sigma(q, r) < \sigma(r, p)$
+\item des arêtes $\{q, r\}$ si $\sigma(q, r) < \sigma(q, p)$ ou $\sigma(q, r) < \sigma(r, p)$. On dira que $\{q, r\}$ est une \textit{paire bloquante de profondeur 2}
 \end{itemize}
 
-En effet, les couples $\{q, p\}$ ou $\{r, p\}$ seront des paires bloquantes et nuisent à la stabilité du couplage. On peut continuer ce processus d'élimination de couples en appliquant la deuxième étape à $p=q$ et $p=r$, et ainsi de suite. On garantit de cette manière de retrouver toutes les paires bloquantes du réseau. Enfin, on relance $STATIQUE$ sur le réseau restant pour retrouver un couplage stable. 
+En effet, pour un tel $p$, les couples $\{q, p\}$ ou $\{r, p\}$ seront des paires bloquantes et nuisent à la stabilité du couplage. 
+On peut continuer ce processus d'élimination de couples en appliquant la deuxième étape à $p=q$ et $p=r$, et ainsi de suite en recensant à chaque nouvelle étape $i$ \textit{les paires bloquantes de profondeur $i+1$}. 
+Il suffit de s'arrêter lorsqu'aucun couple n'est modifié. 
+On garantit de cette manière de retrouver toutes les paires bloquantes du réseau. 
+Enfin, on relance $STATIQUE$ sur le réseau restant pour reconstruire un couplage stable sur la base de l'ancien. 
 
-Dans le cas d'un ajout d'un noeud $n$, on procède à partir du point listé 2 pour $p=n$.
+Dans le cas d'un ajout d'un noeud $n$, on procède à partir du $2^{eme}$ tiret pour $p=n$. 
 
-Le processus de retrait de couple reste coûteux: on parcourt plusieurs fois le couplage et plus il y a de paires bloquantes recensées, plus $STATIQUE$ sera long. Dans une démarche simplificatrice, on ne retire que les couples listés plus haut: on risque alors de manquer des paires bloquantes et de finalement trouver un couplage non stable. Pour mesurer cela, on introduit la \textit{fonction de satisfaction S}:
+Le processus de retrait de couples reste coûteux: on parcourt plusieurs fois le couplage et plus il y a de paires bloquantes recensées, plus l'exécution de $STATIQUE$ sera longue. 
+Dans une démarche simplificatrice, on ne retire que les couples de profondeur 2: on risque alors de manquer des paires bloquantes et de finalement trouver un couplage non stable. 
+Pour quantifier la qualité du couplage calculé -c'est-à-dire à quel point celui-ci se rapproche d'un couplage stable-, on introduit la \textit{fonction de satisfaction S} \cite{papa}:
 \begin{equation}
 S = \frac{1}{|R|}\sum_{i\in R}{S_i} = \frac{1}{|R|}\sum_{i\in R}{(\frac{c_i}{b}+\sum_{j}{\frac{R_i - C_i}{bL_i}})}
 \end{equation}
 
 où, pour $i$ et $j$ deux noeuds, $c_i$ désigne le nombre de couples dans lesquels $i$ intervient, $R_j$ le rang de $j$ dans $Pref(i)$, $C_j$ le rang de $j$ parmi les noeuds couplés avec $i$ et $L_i = |Pref(i)|$.
 
-Intuitivement, plus $S_i$ est proche de 1, plus $i$ est satisfait par son couplage. Moyenner les $S_i$ permet donc de mesurer la satisfaction générale du réseau. La figure 2.(b) permet de confirmer cette intuition: la satisfaction obtenue à l'issue de $STATIQUE$ présente de hauts taux de satisfaction pour $|R| \geq 50$.
 
-Comme montré en figure 3, l'implémentation de cette nouvelle adaptation par modification locale pour le cas d'ajouts successifs de noeuds converge sensiblement plus rapidement que dans le cas naïf. La courbe du temps de convergence s'est affaissée en un profil linéaire. De surcroît, le couplage ainsi déterminé est satisfaisant si $|R| \geq 50$. 
+Intuitivement, plus $S_i$ est proche de 1, plus $i$ est satisfait par son couplage. 
+Moyenner les $S_i$ permet donc de mesurer la satisfaction générale du réseau, qui est un réel dans $[0, 1]$
+La figure 2.(b) permet de confirmer cette intuition: la satisfaction obtenue à l'issue de $STATIQUE$ présente de hauts taux de satisfaction pour $|R| \geq 50$.
 
-En figure 4, on considère l'adaptation dans le cas d'ajouts et retraits successifs. Au fur et à mesure des ajouts et retraits, chaque liaison est succeptible d'être supprimée. J'ai donc mesuré le nombre de tours (d'ajouts ou de retraits) que dure en moyenne un couple. Cette donnée permet d'évaluer le temps dont dispose chaque couple de noeuds pour opérer leur transfert de données via cette liaisons. Par exemple, pour un réseau réel de 300 utilisateurs connectés, et chaque utilisateur reste connecté en moyenne 10 minutes, un noeud est ajouté/retiré chaque seconde, ce qui est grand devant le temps de convergence de l'algorithme. Du point de vue très simplificateur de ce modèle de réseau, cette méthode de modification locale du couplage semble être adaptée à une utilisation dans le cadre de réseaux pairs à pairs. 
+Comme montré en figure 5, l'implémentation de cette nouvelle adaptation par modification locale pour le cas d'ajouts successifs de noeuds converge sensiblement plus rapidement que dans le cas naïf. 
+La courbe du temps de convergence s'est affaissée en un profil linéaire. 
+De surcroît, le couplage ainsi déterminé est de haute satisfaction si $|R| \geq 50$ ($>0.95$). 
+Ces valeurs sont à comparer avec celles obtenues en Section 2.3: un couplage non stable est de satisfaction aléatoire, d'espérance $\frac{1}{2}$.
+
+En figure 6, on considère l'adaptation dans le cas d'ajouts et retraits successifs. Au fur et à mesure des ajouts et retraits, chaque liaison est succeptible d'être supprimée. 
+J'ai donc mesuré en figure 7 le nombre de tours (d'ajouts ou de retraits) que dure en moyenne un couple. 
+Cette donnée permet d'évaluer le temps dont dispose chaque couple de noeuds pour opérer leur transfert de données via cette liaison. 
+Par exemple, pour un réseau réel de 300 utilisateurs connectés où chaque utilisateur reste connecté en moyenne 10 minutes, un noeud est ajouté/retiré chaque seconde. 
+Si, comme la figure 7 le laisse entendre, chaque liaison reste active pendant 30 tours, alors les noeuds disposent de 30 secondes pour échanger leurs données.
+Cette estimation numérique est grande devant le temps de convergence de l'algorithme. 
+Du point de vue très simplificateur de ce modèle de réseau, cette méthode de modification locale du couplage paraît donc être adaptée à une utilisation dans le cadre de réseaux pair à pair. 
 
 
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{chart_adap_add.png}
-  \caption{}
+  \caption{Calcul par modification locale pour l'ajout successif de 150 noeuds à partir d'un réseau de cardinal $|R|=20$}
 \end{figure}
+
 \begin{figure}
   \centering
-  \includegraphics[width=\linewidth]{chart_adap_span.png}
-  \caption{}
+  \includegraphics[width=\linewidth]{chart_adap_t_sat.png}
+  \caption{Calcul par modification locale pour l'ajout et le retrait successif de 40 noeuds à partir d'un réseau de cardinal fixe $|R|=n \pm 1$}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.7\linewidth]{chart_adap_span.png}
+  \caption{Durée de maintien de chaque liaison (en nombre de modifications du réseau)}
 \end{figure}
 
 \section{S'affranchir de la condition d'acyclicité}
@@ -338,7 +374,7 @@ Dans l'exemple suivant, on représente en rouge un 1-couplage, mais il n'existe 
 
 
 J'ai essayé d'adapter $STATIQUE$ au cas de graphes de préférences cycliques en détruisant une arête dès qu'un cycle était détécté, puis un noeud si sa liste de préférence a été complètement vidée. 
-Les résultats de convergence en figure 5 sont peu encourageant: non seulement l'algorithme converge plusieurs centaines de fois plus lentement que $STATIQUE$, mais la satisfaction est très basse. 
+Les résultats de convergence en figure 9 sont peu encourageants: non seulement l'algorithme converge plusieurs centaines de fois plus lentement que $STATIQUE$, mais la satisfaction est très basse. 
 En l'état, cette adaptation n'a pas d'utilité pratique.
 
 
@@ -352,17 +388,18 @@ En l'état, cette adaptation n'a pas d'utilité pratique.
 
 
 
-L'implémentation des réseaux pair à pair à la lumière de la théorie des couplages stables est un domaine riche et prometteur, permettant d'optimiser les liaisons faites en fonction de préférences de chaque utilisateur. Cela n'est cependant possible que dans le cas de préférences donnant naissance à un graphe de préférences acyclique, condition dont il n'est pas simple de s'affranchir. 
+L'implémentation des réseaux pair à pair à la lumière de la théorie des couplages stables est un domaine riche et prometteur, permettant d'optimiser les liaisons faites en fonction de préférences de chaque utilisateur. 
+Cela n'est cependant possible que dans le cas de préférences donnant naissance à un graphe de préférences acyclique, condition dont il n'est pas simple de s'affranchir. 
+A ce sujet, il serait donc intéressant d'approfondir les raisons de l'échec de l'algorithme d'élimination de cycles et d'en déduire une nouvelle adaptation plus pertinente.
 
-Dans le cadre de la forte simplification qui est faite ici du protocole de couplage mis en place par les réseaux pair à pair, le couplage par b-couplages stables semble converger suffisamment rapidement pour le partage de segment de données entre les utilisateurs. 
+Dans le cadre de la forte simplification qui est faite ici du protocole de couplage mis en place par les réseaux pair à pair, le couplage par b-couplages stables semble converger suffisamment rapidement pour le partage de données entre utilisateurs. 
 Il serait intéressant d'implémenter un algorithme de couplage couramment utilisé dans les réseaux pair à pair afin de pouvoir comparer sa performance à celle de mon implémentation.
 
 Il ressort de mon étude que la satisfaction semble être une mesure plus adéquate que celle de stabilité pour quantifier la qualité d'un couplage. 
 En effet, la stabilité est une notion binaire, peu adaptée à un problème d'optimisation et à la recherche d'un facteur d'approximation. 
 La satisfaction étant un nombre entre 0 et 1, elle est pour sa part adaptée à un tel problème. 
+De surcroît, l'algorithme d'approximation d'un couplage de satisfaction maximale proposé par G. Georgiadis et F. Papatriantafilou (2007) \cite{papa} est fonctionnel dans le cas de graphes de préférences cycliques. 
 
-De surcroît, l'algorithme d'approximation d'un couplage de satisfaction maximale proposé par G. Georgiadis et F. Papatriantafilou (2007) est fonctionnel dans le cas de graphes de préférences cycliques. 
-Dans le cas des couplages stables, il s'agit d'une contrainte de laquelle on ne peut pas s'affranchir simplement: l'adaptation que j'ai proposée a échoué; il serait donc intéressant d'approfondir les raisons de son échec et d'en déduire une nouvelle adaptation plus pertinente.
 
 
 
@@ -393,7 +430,7 @@ $\square$
 
 En plus de permettre de prouver la terminaison de $STATIQUE$, la notion de paire aimante est centrale au fonctionnement de cet algorithme. En effet, lorsque deux noeuds sont couplés via une paire aimante, chacun est retiré de la liste de préférence de l'autre, ce qui permet de trouver une nouvelle paire aimante au sein du graphe de préférences. On continue tant qu'il existe une paire aimante.
 
-\subsection{Code principal}
+\subsection{Code principal en OcamL}
 
 Le code entier est très long. Les types et les fonctions principales de $STATIQUE$ sont listées ci-dessous. D'autres fonctions auxiliaires sont utilisées:
 \begin{itemize}
@@ -409,54 +446,86 @@ type trileen = Unmatched | Unloving | Loving
 
 type node = {
   id: int;
-  mutable ind_noeuds : int; (*indice du node dans le tableau reseau.noeuds *)
-  mutable ind_unloving : int; (*indice du node dans reseau.unloving*)
-  config : pfile; (* Tableau de noeuds rangé par marque décroissante des nodes avec lesquels le node peut échanger des données.
-    C'est la liste d'adjacence de node dans le graphe d'acceptance.
-    Les cases non utilisées sont à la fin du tableau et à None*)
-  couplage : pfile; (*Tableau de taille b ordonné par marque décroissante des nodes intervenant dans le couplage*)
-  mutable num_loving : int; (*Nombre (majoré par b et par couplage.len) de peers au sein de couplage qui sont loving*)
+  mutable ind_noeuds : int; 
+    (*indice du node dans le tableau reseau.noeuds *)
+
+  mutable ind_unloving : int; 
+    (*indice du node dans reseau.unloving*)
+
+  config : pfile; 
+    (* Tableau de noeuds rangé par marque décroissante des nodes 
+    avec lesquels le node peut échanger des données. C'est la liste 
+    d'adjacence de node dans le graphe d'acceptance. Les cases non 
+    utilisées sont à la fin du tableau et à None*)
+  
+  couplage : pfile; 
+    (*Tableau de taille b ordonné par marque décroissante des nodes intervenant 
+    dans le couplage*)
+  
+  mutable num_loving : int; 
+    (*Nombre (majoré par b et par couplage.len) de peers au sein de couplage 
+    qui sont loving*)
 }
-and pfile = { (*Tableau trié selon la marque décroissante. Les cases non utilisées sont à None*)
+and pfile = { 
+    (*Tableau trié selon la marque décroissante. Les cases non utilisées sont à None*)
   mutable tab : champ option array;
   mutable len : int;
 }
-and champ = { (*Structure modélisant une arête depuis un noeud*)
+and champ = { 
+    (*Structure modélisant une arête depuis un noeud*)
   n : node;
-  e : trileen; (*indique si node est dans le couplage ou pas, relevant seulement pour config*)
+  e : trileen; 
+    (*indique si node est dans le couplage ou pas, relevant seulement pour config*)
+  
   marque : int;
 }
 
 type reseau = {
-  mutable noeuds : node option array; (*tableau des nodes dans le réseau. Le node d'indice node.id est à l'indice node.id*)
-  mutable len_noeuds : int; (*Taille de noeuds*)
-  mutable len_unloving : int; (*Taille de unloving. Le protocol s'arrête quand ça atteint 0*)
-  mutable unloving : node option array; (*tableau des noeuds dont le couplage n'est pas composé que de peers loving. Idem niveau node.id *)
+  mutable noeuds : node option array; 
+    (*tableau des nodes dans le réseau. Le node d'indice node.id est à 
+    l'indice node.id*)
+
+  mutable len_noeuds : int; 
+    (*Taille de noeuds*)
+
+  mutable len_unloving : int; 
+    (*Taille de unloving. Le protocol s'arrête quand ça atteint 0*)
+
+  mutable unloving : node option array; 
+    (*tableau des noeuds dont le couplage n'est pas composé que de peers loving. 
+    La structure est la même que noeuds*)
 }
 
 
 
-let couplement node peer reseau marque = (*On a trouvé une paire devant être couplée: 
-  On ajoute la paire au couplage et 
+let couplement node peer reseau marque = 
+(*On a trouvé une paire devant être couplée: 
+    On ajoute la paire au couplage et 
     si la paire est loving on retire de chaque config le pair correspondant et 
-    on les enlève du unloving du réseau et on réduit le unloving du reseau si ils sont complètement couplés avec des loving*)
+    on les enlève du unloving du réseau et on réduit le unloving du reseau si 
+    ils sont complètement couplés avec des loving*)
   pfile_insere node.couplage peer Unloving marque;
   pfile_insere peer.couplage node Unloving marque;
   set_flag_in_pfile node.config peer Unloving None;
   set_flag_in_pfile peer.config node Unloving None;
   match peer.config.tab.(peer.config.len -1) with 
   |  None -> (print_string "\nLe peer choisi n'a pas de config\n"; exit(1))
-  |  Some c when c.n.id != node.id -> ()(*print_string "Pas loving - "*)
+  |  Some c when c.n.id != node.id -> 
+    (*La paire n'est pas loving*)
+    ()
   |  Some c ->
     traitement_loving node peer reseau
 
 
 let traitement_loving node peer reseau = 
+(*On effectue les démarches nécessaires pour coupler définitivement node et peer*)
   node.num_loving <- node.num_loving +1;
   peer.num_loving <- peer.num_loving +1;
-  set_flag_in_pfile node.couplage peer Loving None; (*Potentiellement aller chercher le bon indice*)
+  set_flag_in_pfile node.couplage peer Loving None;
   set_flag_in_pfile peer.couplage node Loving None;
-  if node.num_loving = !b then begin (*Le node est complètement couplé qu'avec des paires incassables: on le retire de unloving*)
+  if node.num_loving = !b then begin 
+    (*Le node est complètement couplé qu'avec des paires incassables:
+      on le retire de unloving*)
     nullify_unloving reseau node; 
     remove_from_couplages reseau node;
   end;
@@ -475,7 +544,8 @@ let proposal node peer reseau m =
     match wno, wpo with 
     |  Some wn, Some wp when (m, m) >= (wp.marque, wn.marque) ->( 
       (*On s'assure que faire un changement garantit de trouver un meilleur état*)
-      (*On retire les worst mate de peer et node pour les remplacer avec un autre mate de marque str sup*)
+      (*On retire les worst mate de peer et node pour les remplacer avec un autre 
+      mate de marque str. sup*)
         casse_match wn.n node;
         casse_match wp.n peer;
         remove_nth peer.couplage 0;
@@ -490,7 +560,9 @@ let proposal node peer reseau m =
     match wno with 
     |  Some wn ->( 
       assert(node.num_loving < !b);
-      casse_match wn.n node;      (* On enlève le worst du couplage de node pour avoir la place pour peer (qui est mieux)*)
+      casse_match wn.n node;      
+  (* On enlève le worst du couplage de node pour avoir la place pour peer 
+      (qui est mieux)*)
       remove_nth node.couplage 0;
       set_flag_in_pfile node.config wn.n Unmatched None;
       couplement node peer reseau m)
@@ -499,7 +571,9 @@ let proposal node peer reseau m =
     match wpo with 
     |  Some wp ->( 
       assert(peer.num_loving < !b);
-      casse_match wp.n peer;      (* On enlève le worst du couplage de node pour avoir la place pour peer (qui est mieux)*)
+      casse_match wp.n peer;      
+      (* On enlève le worst du couplage de node pour avoir la place pour peer 
+      (qui est mieux)*)
       remove_nth peer.couplage 0;
       set_flag_in_pfile peer.config wp.n Unmatched None;
       couplement node peer reseau m)
@@ -518,7 +592,8 @@ let rec initiative_best reseau = (*Réalise une initiative via stratégie best m
     |  None -> failwith "Erreur: le best mate du node est à None"
     |  Some best -> begin 
       if best.n.ind_unloving = -1 || best.n.ind_noeuds = -1 then begin
-      (* On retire de la config et on repioche. Le retrait d'un node cause au plus len_config repiochages -> ok complexité
+      (* On retire de la config et on repioche. Le retrait d'un node cause 
+      au plus len_config repiochages -> ok complexité
      Ceci arrive quand un best couplé apparaît dans la config de node *)
           let _ = pfile_defile node.config in 
           ()
@@ -527,7 +602,9 @@ let rec initiative_best reseau = (*Réalise une initiative via stratégie best m
           assert(mem_couplage node best.n);
           check_loving node best.n reseau
       end
-      else begin   (* On voit s'il est intéressant de coupler node et best -> c'est intéressant pour node, l'est-ce pour best?*)
+      else begin   
+(* On voit s'il est intéressant de coupler node et best 
+  -> c'est intéressant pour node, l'est-ce pour best?*)
         proposal node best.n reseau best.marque
       end
     end
@@ -570,4 +647,7 @@ let connections_init p reseau = (*Génère une liste de préférence selon erdos
   
 \end{verbatim}
 
+\bibliographystyle{plain} % We choose the "plain" reference style
+\bibliography{biblio} % Entries are in the refs.bib file
+  
 \end{document}
