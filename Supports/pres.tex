@@ -120,6 +120,7 @@
         \Vertex[x=0, y=2]{C}
         \Vertex[x=-2, y=0]{B}
         \Vertex[x=2, y=0]{D}
+        \tikzset{EdgeStyle/.style={->}}
         \Edge[label=F](Serv)(A)
         \Edge[label=F](Serv)(B)
         \Edge[label=F](Serv)(C)
@@ -230,7 +231,7 @@
     \end{columns}
 
     \vspace{1cm}
-    \textbf{$b$-couplage:} $C$ ensemble d'arêtes vérifiant $\forall n\in N, \space \sharp\{\{n, p\}\space  | \space p \in N\} \space \leq \space b$.
+    \textbf{$b$-couplage:} ensemble d'arêtes vérifiant $\forall n\in N, \space \sharp\{\{n, p\}\space  | \space p \in N\} \space \leq \space b$.
 \end{frame}
 
 
@@ -256,7 +257,7 @@
     \end{tikzpicture}
     
     \vspace{0.2cm}
-    La \textit{liste de préférences} d'un noeud ordonne les autres noeuds
+    La \textbf{liste de préférences} d'un noeud ordonne les autres noeuds
 \end{frame}
 
 
@@ -290,6 +291,7 @@
 
     \vspace{1cm}
     \textbf{Graphe de préférences:} Sommets = utilisateurs, Arête de $X$ à $Y$ si $Y$ est premier dans la liste de préférence de $X$
+    
     \textbf{Graphe cyclique:} s'il y a un $k$-cycle pour $k\ge2$
 \end{frame}
 
@@ -311,9 +313,6 @@
         \Vertex[x=2, y=2]{C}
         \tikzset{EdgeStyle/.style={-}}
         \Edge(A)(B)
-        \tikzset{EdgeStyle/.style={dotted, color=black}}
-        \Edge(A)(C)
-        \Edge(C)(B)
         \node[anchor=north] at (B.south) {[A; C]};
         \node[anchor=south] at (C.north) {[A; B]};
         \node[anchor=north] at (A.south) {[C; B]};
@@ -334,9 +333,6 @@
         \Vertex[x=2, y=2]{C}
         \tikzset{EdgeStyle/.style={-}}
         \Edge(A)(B)
-        \tikzset{EdgeStyle/.style={dotted, color=black}}
-        \Edge(A)(C)
-        \Edge(C)(B)
         \node[anchor=north] at (B.south) {[A; C]};
         \node[anchor=south] at (C.north) {[A; B]};
         \node[anchor=north] at (A.south) {[B; C]};
@@ -347,7 +343,7 @@
  
     \vspace{1cm}
     \textbf{$R_n(p)$:} Rang du noeud p dans la liste de préférence de n.
-    \vspace{0.2cm}
+    
     \textbf{$b$-couplage stable:} Couplage $C$ de cardinal maximal vérifiant $\forall \{n, p\}\in C, \forall \{n', p'\} \in N^{2}, R_n(p) > R_n(p')$ ou $R_p(n) > R_p(n')$.
 \end{frame}
 
@@ -377,16 +373,18 @@
     Soit $b\in \mathbb{N}$ et $R$ un réseau. Si le graphe de préférence de $R$ est acyclique, alors $R$ admet un $b$-couplage stable.
     \end{block}
 
-    Dans un graphe de préférence acyclique:
     \begin{itemize}
-        \item Implémentation pour un réseau statique
-        \item Première adaptation pour un réseau dynamique
-        \item Deuxième adaptation moins naïve pour un réseau dynamique
+    \item
+        Dans un graphe de préférence acyclique:
+        \begin{itemize}
+            \item Implémentation pour un réseau statique
+            \item Première adaptation de l'algorithme pour un réseau dynamique
+            \item Deuxième adaptation moins naïve
+        \end{itemize}
+
+    \item Adaptation dans un graphe de préférence cyclique
+    \item Validation des résultats via temps d'activité des liaisons
     \end{itemize}
-    \vspace{0.3cm}
-
-    puis adaptation dans un graphe de préférence cyclique:
-
 \end{frame}
 
 
@@ -394,7 +392,7 @@
 % =================================================
 
 \begin{frame}
-    \frametitle{Calcul de couplage stable statique}
+    \frametitle{Calcul de couplage stable statique\footnote{\textit{Mathieu, 2007}}}
         Soit $n$, $p$ deux utilisateurs
 
         \begin{block}{Définition}
@@ -424,7 +422,8 @@
             \includegraphics[width=0.7\linewidth]{chart_fab_log.png}
             \caption{Logarithme du temps de convergence de $STATIQUE$}
         \end{figure}
-    Attendu: $O(2^{n+b})$
+    \centering
+     Complexité: $O(C_bn^{a})$ où $a \simeq 2$
 \end{frame}
 
 
@@ -444,7 +443,7 @@
         \begin{figure}
             \centering
             \includegraphics[width=0.7\linewidth]{chart_dyna_t.png}
-            \caption{Ajout successifs de 180 noeuds à partir de $|R|=10$}
+            \caption{Ajouts successifs de 200 noeuds à partir de $|R|=10$}
         \end{figure}
 \end{frame}
 
@@ -456,14 +455,14 @@
     \frametitle{Calcul de couplage stable dynamique par modification locale}
     Description de l'algorithme:
     \begin{itemize}
-        \item Construit d'un b-couplage stable
+        \item Construction d'un b-couplage stable
         \item A chaque modification, changement local du couplage autour de la modification
     \end{itemize}
-    Mesure de satisfaction\footnote{\textit{G. Georgiadis, M. Papatriantafilou}} pour un noeud $i$:
+    Mesure de satisfaction\footnote{\textit{Georgiadis \& Papatriantafilou, 2012}} pour un noeud $i$:
         \begin{equation}
-            S_i = \frac{c_i}{b} + \sum_{j}{\frac{R_j - C_j}{L_j b} \in [0, 1]}
+            S_i = \frac{1}{b} . (c_i + \frac{\sum_{j}{R_j - C_j}}{L_j}) \in [0, 1]
         \end{equation}
-    Intuitivement, elle quantifierait la stabilité du couplage.
+    La satisfaction quantifie la stabilité du couplage.
 \end{frame}
 
 \begin{frame}
@@ -480,7 +479,7 @@
     \begin{figure}
         \centering
         \includegraphics[width=0.9\linewidth]{chart_adap_add.png}
-        \caption{Ajout successifs de 180 noeuds à partir de $|R|=20$}
+        \caption{Ajouts successifs de 130 noeuds à partir de $|R|=20$}
     \end{figure}
 \end{frame}
 
@@ -489,7 +488,7 @@
     \begin{figure}
         \centering
         \includegraphics[width=0.8\linewidth]{chart_adap_t_span.png}
-        \caption{Ajout et retrait successifs à $|R|$ fixé}
+        \caption{Ajouts et retraits successifs à $|R|$ fixé}
     \end{figure}
 \end{frame}
 
@@ -646,7 +645,7 @@
     \column{0.4\linewidth}
     \begin{itemize}
         \item 2 cycles coupés 
-        \item 0 noeuds détruits
+        \item 0 noeuds supprimés
     \end{itemize}
     \end{columns}
 \end{frame}
@@ -656,7 +655,8 @@
 \begin{figure}
     \centering
     \includegraphics[width=0.9\linewidth]{chart_cyc_t_sat.png}
-    \end{figure}
+    \caption{Temps de convergence (s) et satisfaction de l'adaptation aux graphes de préférences cycliques}
+\end{figure}
 \end{frame}
 
 
@@ -666,7 +666,7 @@
     \frametitle{Conclusions et perspectives}
 
     \begin{itemize}
-        \item Implémentation par couplages converge suffisamment rapidement
+        \item L'implémentation par couplages converge suffisamment rapidement
         \item La notion de satisfaction convient mieux que celle de couplage stable
         \item Perspectives: 
         \begin{itemize}
@@ -706,6 +706,23 @@
         International Symposium on Experimental Algorithms, 2012
 
     \end{thebibliography}
+
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Annexe - Mesure de satisfaction}
+    \begin{equation}
+        S = \sum_{i}{S_i} = 
+        \sum_{i}{ \frac{1}{b} . (c_i + \frac{\sum_{j}{R_j - C_j}}{L_i})} \in [0, 1]
+    \end{equation}
+    $c_i$ : Nombre de noeuds couplés à $i$ 
+
+    $L_i$ : Longeur de la liste de préférence de $i$
+
+    $R_j$ : Rang de $j$ dans la liste de préférence de $i$ 
+
+    $C_j$ : Rang de $j$ parmi les noeuds couplés avec $i$ 
 
 \end{frame}
 

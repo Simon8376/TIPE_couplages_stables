@@ -18,9 +18,9 @@
 \usepackage{caption, subcaption}
 \usepackage[left=2cm, right=2cm, top=2cm, bottom=2cm]{geometry}
 \usepackage{float}
+\usepackage{hyperref}
 
 \usepackage[svgnames]{xcolor} % De la couleur
-\usepackage{geometry}       % Gérer correctement la taille
 
 %%% Si jamais vous voulez changer de police: décommentez les trois 
 %\usepackage{tgpagella}
@@ -142,7 +142,7 @@ Certains critères de préférence peuvent toutefois donner naissance à des gra
 La détermination systématique d'un couplage stable étant impossible, on s'intéressera en Section 3 à la possibilité de déterminer une approximation de couplage stable.
 
 
-\section{Implémentation d'un algorithme de calcul de $b$-couplage stable dans un réseau dynamique}
+\section{Implémentation d'un algorithme de calcul de b-couplage stable dans un réseau dynamique}
 \subsection{Calcul d'un b-couplage stable dans un réseau statique}
 
 
@@ -404,7 +404,7 @@ De surcroît, l'algorithme d'approximation d'un couplage de satisfaction maximal
 
 
 \section{Annexes}
-\subsection{Preuve de terminaison de $STATIQUE$}
+\subsection{Preuve de terminaison de STATIQUE}
 
 
 La preuve de terminaison de l'algorithme repose sur la notion de \textit{paire aimante}. 
@@ -432,12 +432,17 @@ En plus de permettre de prouver la terminaison de $STATIQUE$, la notion de paire
 
 \subsection{Code principal en OcamL}
 
-Le code entier est très long. Les types et les fonctions principales de $STATIQUE$ sont listées ci-dessous. D'autres fonctions auxiliaires sont utilisées:
+Le code entier est très long. 
+Il est entièrement accessible depuis un \href{https://github.com/Simon8376/TIPE_couplages_stables}{répositoire Github publique}.
+
+Les types et les fonctions principales de $STATIQUE$ sont listées ci-dessous. 
 \begin{itemize}
 \item casse\_match n p supprime le couple \{n, p\}.
 \item choix\_best r choisi aléatoirement un noeud et son pair préféré dans R.
 \item check\_loving n p vérifie si \{n, p\} est une paire aimante, et couple \{n, p\} en fonction.
 \end{itemize}
+
+
 
 \begin{verbatim}
 
