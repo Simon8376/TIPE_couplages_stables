@@ -75,7 +75,7 @@
 \title[b-couplages stables]{Implémenter un réseau pair à pair à l'aide des couplages}
 \author[Simon Roux]{Simon Roux}
 \institute{
-    TIPE ENS - MPI
+    TIPE - MPI
 }
 \date{\today}
 
@@ -232,7 +232,7 @@
 
     \vspace{1cm}
     \centering
-    \textbf{$b$-couplage:} ensemble d'arêtes $C$ vérifiant $\forall n\in N, \space \sharp\{\{n, p\}\in C \space  | \space p \in N\} \space \leq \space b$.
+    \textbf{$b$-couplage:} Ensemble d'arêtes $C$ vérifiant $\forall n\in N, \space \sharp\{\{n, p\} \in C \space  | \space p \in N\} \space \leq \space b$.
 \end{frame}
 
 
@@ -345,7 +345,7 @@
 \end{columns}
  
     \vspace{1cm}
-    \textbf{$R_n(p)$:} Rang du noeud $p$ dans la liste de préférence de n.
+    \textbf{$R_n(p)$:} Rang du noeud p dans la liste de préférence de n.
     
     \textbf{$b$-couplage stable:} Couplage $C$ de cardinal maximal vérifiant $\forall \{n, p\}\in C, \forall \{n', p'\} \in N^{2}, R_n(p) > R_n(p')$ ou $R_p(n) > R_p(n')$.
 \end{frame}
@@ -375,18 +375,14 @@
     \begin{block}{Proposition}
     Soit $b\in \mathbb{N}$ et $R$ un réseau. Si le graphe de préférence de $R$ est acyclique, alors $R$ admet un $b$-couplage stable.
     \end{block}
-
+    
+    Dans un graphe de préférence acyclique:
     \begin{itemize}
-    \item
-        Dans un graphe de préférence acyclique:
-        \begin{itemize}
-            \item Implémentation pour un réseau statique
-            \item Première adaptation de l'algorithme pour un réseau dynamique
-            \item Deuxième adaptation moins naïve
-        \end{itemize}
-
-    \item Validation des résultats via temps d'activité des liaisons
+        \item Implémentation pour un réseau statique
+        \item Première adaptation pour un réseau dynamique
+        \item Deuxième adaptation moins naïve
     \end{itemize}
+    Validation via le temps d'activité des liaisons
 \end{frame}
 
 
@@ -394,11 +390,11 @@
 % =================================================
 
 \begin{frame}
-    \frametitle{Calcul de couplage stable statique\footnote{\textit{Lebedev et al., 2007}}}
+    \frametitle{Calcul de couplage stable statique\footnote{\textit{Mathieu, 2007}}}
         Soit $n$, $p$ deux utilisateurs non couplés
 
         \begin{block}{Définition}
-        La paire $\{n, p\}$ est \textbf{bloquante} si $n$ et $p$ préfèreraient être couplés ensemble.
+        La paire $\{n, p\}$ est \textbf{bloquante} si $n$ et $p$ préfèreraient être couplés ensemble plutôt que de conserver leur couplage.
         \end{block}
         
         \begin{figure}
@@ -425,7 +421,7 @@
             \caption{Logarithme du temps de convergence de $STATIQUE$}
         \end{figure}
     \centering
-     Complexité: $O(C_bn^{a})$ où $a \simeq 2,5$
+    Complexité: $O(C_bn^a)$ où $a\simeq 2,5$
 \end{frame}
 
 
@@ -445,7 +441,7 @@
         \begin{figure}
             \centering
             \includegraphics[width=0.7\linewidth]{chart_dyna_t.png}
-            \caption{Ajouts successifs de 200 noeuds à partir de $|R|=10$}
+            \caption{Ajout successifs de 200 noeuds à partir de $|R|=10$}
         \end{figure}
 \end{frame}
 
@@ -462,9 +458,9 @@
     \end{itemize}
     Mesure de satisfaction\footnote{\textit{Georgiadis \& Papatriantafilou, 2012}} pour un noeud $i$:
         \begin{equation}
-            S_i = \frac{1}{b} . (c_i - \frac{\sum_{j}{R_j - C_j}}{L_j}) \in [0, 1]
+            S_i = \frac{1}{b} . (c_i - \sum_{j}{\frac{R_j - C_j}{L_i}}) \in [0, 1]
         \end{equation}
-    La satisfaction quantifie la stabilité du couplage.
+    Elle quantifie la stabilité du couplage.
 \end{frame}
 
 \begin{frame}
@@ -498,6 +494,7 @@
 % =================================================
 
 
+
 % =================================================
 
 \begin{frame}
@@ -509,7 +506,7 @@
         \item Perspectives: 
         \begin{itemize}
             \item Implémenter un algorithme réellement utilisé par les réseaux P2P $\rightarrow$ Comparaison
-            \item Etude de cas limite
+            \item Etude de cas limites
         \end{itemize}
     \end{itemize}
 
@@ -547,21 +544,18 @@
 
 \end{frame}
 
-
 \begin{frame}
     \frametitle{Annexe 1 - Mesure de satisfaction}
     \begin{equation}
-        S = \sum_{i}{S_i} = 
-        \sum_{i}{ \frac{1}{b} . (c_i - \frac{\sum_{j}{R_j - C_j}}{L_i})} \in [0, 1]
+        S_i = \frac{1}{b} . (c_i - \sum_{j}{\frac{R_j - C_j}{L_i} \in [0, 1]}) \in [0, 1]
     \end{equation}
-    $c_i$ : Nombre de noeuds couplés à $i$ 
+    $c_i$ : Nombre de noeuds couplés avec $i$
 
     $L_i$ : Longeur de la liste de préférence de $i$
 
     $R_j$ : Rang de $j$ dans la liste de préférence de $i$ 
 
-    $C_j$ : Rang de $j$ parmi les noeuds couplés avec $i$ 
-
+    $C_j$ : Rang de $j$ parmi les noeuds couplés avec $i$
 \end{frame}
 
 
@@ -577,36 +571,148 @@
     \end{itemize}
 \end{frame}
 
-\begin{frame}
-    \frametitle{Annexe 2.2 - Condition d'acyclicité}
-    \centering
-    \begin{tikzpicture}
-        \SetUpEdge[lw = 1.5pt,
-        color = orange,
-        labelcolor = white]
-        \GraphInit[vstyle=Normal] \SetGraphUnit{3}
-        \tikzset{VertexStyle/.append style={fill = red!50}}
-        \Vertex{A}
-        \node[anchor=east] at (A.west) {[B; C]};
-        \Vertex[x=0, y=4]{B}
-        \Vertex[x=2, y=2]{C}
-        \node[anchor=east] at (B.west) {[C; A]};
-        \node[anchor=west] at (C.north) {[A; B]};
-        \tikzstyle{EdgeStyle}=[color=red, ->]
-        \Edge(A)(B)
-        \Edge(B)(C)
-        \Edge(C)(A)
-    \end{tikzpicture}
-\end{frame}
 
 \begin{frame}
-\frametitle{Annexe 2.3 - Condition d'acyclicité}
+\frametitle{Annexe 2.2 - Condition d'acyclicité}
 \begin{figure}
     \centering
     \includegraphics[width=0.9\linewidth]{chart_cyc_t_sat.png}
     \caption{Temps de convergence (s) et satisfaction de l'adaptation aux graphes de préférences cycliques}
-\end{figure}
+    \end{figure}
 \end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Annexe 3 - Code principal}
+    \begin{verbatim}
+    type trileen = Unmatched | Unloving | Loving
+(*Différents états d’un noeud au sens d’une configuration*)
+
+type node = {
+    id: int;
+    mutable ind_noeuds : int;
+      (*indice du node dans le tableau reseau.noeuds *)
+    mutable ind_unloving : int;
+      (*indice du node dans reseau.unloving*)
+    config : pfile;
+      (* Tableau de noeuds rangé par marque décroissante des
+      nodes avec lesquels le node peut échanger des données.
+      C’est la liste d’adjacence de node dans le graphe
+      d’acceptance. Les cases non utilisées sont à la fin du
+      tableau et à None*)
+
+    \end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+    \begin{verbatim}
+    couplage : pfile;
+      (*Tableau de taille b ordonné par marque décroissante des
+      nodes intervenant dans le couplage*)
+    mutable num_loving : int;
+      (*Nombre (majoré par b et par couplage.len) de peers au
+      sein de couplage qui sont loving*)
+}
+and pfile = {
+  (*Tableau trié selon la marque décroissante. Les cases non
+  utilisées sont à None*)
+    mutable tab : champ option array;
+    mutable len : int;
+}
+and champ = { (*Modélise une arête depuis un noeud*)
+    n : node;
+    e : trileen;
+      (*indique si node est dans le couplage ou pas*)
+    marque : int;}
+    \end{verbatim}
+\end{frame}
+
+
+\begin{frame}[fragile]
+    \begin{verbatim}
+type reseau = {
+    mutable noeuds : node option array;
+      (*tableau des nodes dans le réseau. Le node d’indice
+      node.id est à l’indice node.id*)
+    mutable len_noeuds : int;
+      (*Taille de noeuds*)
+    mutable len_unloving : int;
+      (*Taille de unloving. Fin de l’algo quand ça atteint 0*)
+    mutable unloving : node option array;
+      (*tableau des noeuds dont le couplage n’est pas composé
+      que de peers loving. La structure est la même que
+      le tableau noeuds*)
+}
+    \end{verbatim}
+\end{frame}
+
+
+\begin{frame}[fragile]
+    \begin{verbatim}
+let couplement node peer reseau marque =
+  (*On a trouvé une paire devant être couplée:
+  On ajoute la paire au couplage et si la paire est
+  loving on retire de chaque config le pair correspondant
+  et on les enlève du unloving du réseau et on réduit le
+  unloving du reseau si ils sont complètement couplés avec
+  des loving*)
+    pfile_insere node.couplage peer Unloving marque;
+    pfile_insere peer.couplage node Unloving marque;
+    set_flag_in_pfile node.config peer Unloving None;
+    set_flag_in_pfile peer.config node Unloving None;
+    match peer.config.tab.(peer.config.len -1) with
+    | None -> (*Le peer choisi n’a pas de config\n"*)
+        exit(1)
+    | Some c when c.n.id = node.id -> (*La paire est loving*)
+        traitement_loving node peer reseau
+    | _ -> ()
+    \end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+    \begin{verbatim}
+let traitement_loving node peer reseau =
+  (*On effectue les démarches nécessaires pour coupler
+  définitivement node et peer*)
+    node.num_loving <- node.num_loving +1;
+    peer.num_loving <- peer.num_loving +1;
+    set_flag_in_pfile node.couplage peer Loving None;
+    set_flag_in_pfile peer.couplage node Loving None;
+    if node.num_loving = !b then (
+      (*Le node est complètement couplé qu’avec des paires
+      incassables: on le retire de unloving*)
+        nullify_unloving reseau node;
+        remove_from_couplages reseau node;)
+    if peer.num_loving = !b then (
+        nullify_unloving reseau peer;
+        remove_from_couplages reseau peer;)
+    rm_config node peer;
+    rm_config peer node
+    \end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+    \begin{verbatim}
+let protocol reseau =
+    num.num <- 0;
+    while reseau.len_unloving > 0 do
+        initiative_best reseau;
+    done
+
+let connections_init p reseau =
+  (*Génère une liste de préférence
+  selon erdos-renyi*)
+    let pf = pfile_vide () in
+    for i = 0 to reseau.len_unloving -1 do
+        match reseau.unloving.(i) with
+        | None -> failwith "None au milieu du unloving"
+        | Some node ->
+            let m = rand_with_prob p in
+            pfile_insere pf node Unmatched m;
+    done;
+    pf
+    \end{verbatim}
+\end{frame}
+
 
 % -------------------------------------------------
 \end{document}

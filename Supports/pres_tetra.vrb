@@ -1,0 +1,20 @@
+\begin{verbatim}
+let protocol reseau =
+    num.num <- 0;
+    while reseau.len_unloving > 0 do
+        initiative_best reseau;
+    done
+
+let connections_init p reseau =
+  (*Génère une liste de préférence
+  selon erdos-renyi*)
+    let pf = pfile_vide () in
+    for i = 0 to reseau.len_unloving -1 do
+        match reseau.unloving.(i) with
+        | None -> failwith "None au milieu du unloving"
+        | Some node ->
+            let m = rand_with_prob p in
+            pfile_insere pf node Unmatched m;
+    done;
+    pf
+    \end{verbatim}
